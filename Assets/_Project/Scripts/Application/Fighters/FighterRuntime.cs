@@ -51,6 +51,16 @@ namespace OctagonFighter.Application.Fighters
         public FighterSnapshot Snapshot => _snapshot;
 
         /// <summary>
+        /// Gets the intent consumed by the most recent tick.
+        /// </summary>
+        public FighterIntent CurrentIntent { get; private set; }
+
+        /// <summary>
+        /// Gets the movement authority of the current state.
+        /// </summary>
+        public MovementAuthority CurrentMovementAuthority => _stateMachine.CurrentMovementAuthority;
+
+        /// <summary>
         /// Occurs after a successful state transition.
         /// </summary>
         public event Action<FighterStateChangedEvent> StateChanged;
@@ -113,6 +123,8 @@ namespace OctagonFighter.Application.Fighters
             {
                 intent = FighterIntent.None;
             }
+
+            CurrentIntent = intent;
 
             if (_stateMachine.CurrentStateId != FighterStateId.Defeated)
             {

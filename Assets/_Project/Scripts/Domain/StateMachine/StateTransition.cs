@@ -22,7 +22,7 @@ namespace OctagonFighter.Domain.StateMachine
         /// </summary>
         public TickId Tick { get; }
 
-        internal StateTransition(FighterStateId from, FighterStateId to, TickId tick)
+        public StateTransition(FighterStateId from, FighterStateId to, TickId tick)
         {
             From = from;
             To = to;

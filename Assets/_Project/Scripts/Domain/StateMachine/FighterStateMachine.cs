@@ -31,6 +31,12 @@ namespace OctagonFighter.Domain.StateMachine
         public float TimeInState => _timeInState;
 
         /// <summary>
+        /// Gets the movement authority granted by the current state.
+        /// </summary>
+        public MovementAuthority CurrentMovementAuthority =>
+            _currentState != null ? _currentState.MovementAuthority : MovementAuthority.None;
+
+        /// <summary>
         /// Registers a state with the machine.
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="state"/> is null.</exception>

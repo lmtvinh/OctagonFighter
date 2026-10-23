@@ -55,7 +55,7 @@ namespace OctagonFighter.Domain.Health
         {
             if (_isKnockedOut || damage.Amount <= 0f)
             {
-                return CreateResult(0f, _currentHealth, _isKnockedOut);
+                return CreateResult(0f, _currentHealth, false);
             }
 
             float previousHealth = _currentHealth;

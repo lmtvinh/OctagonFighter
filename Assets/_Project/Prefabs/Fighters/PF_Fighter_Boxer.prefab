@@ -1,0 +1,240 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8945547735865917192
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5138892866318323631}
+  - component: {fileID: 6957056801346696042}
+  - component: {fileID: 3601974644913026428}
+  - component: {fileID: 287321346793554248}
+  - component: {fileID: 5434129528249814727}
+  - component: {fileID: 2880745294411758883}
+  - component: {fileID: 2118846769059970612}
+  - component: {fileID: 9220890536647227054}
+  m_Layer: 0
+  m_Name: PF_Fighter_Boxer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5138892866318323631
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8945547735865917192}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2468793132501122110}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!143 &6957056801346696042
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8945547735865917192}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 1.8
+  m_Radius: 0.3
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0.001
+  m_Center: {x: 0, y: 0.9, z: 0}
+--- !u!114 &3601974644913026428
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8945547735865917192}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 702b66ec1605e064a8db3559d24232b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: OctagonFighter.Infrastructure::OctagonFighter.Infrastructure.Health.HealthComponent
+--- !u!114 &287321346793554248
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8945547735865917192}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1eafe518f7ee1ae43bcae72d10c6aa6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: OctagonFighter.Infrastructure::OctagonFighter.Infrastructure.Stamina.StaminaComponent
+--- !u!114 &5434129528249814727
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8945547735865917192}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85bfa7059f99e814e905644bbcee0c5e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: OctagonFighter.Infrastructure::OctagonFighter.Infrastructure.Movement.FighterMotor
+  _rotationDegreesPerSecond: 720
+  _gravity: -20
+  _limitedAuthorityScale: 0.45
+--- !u!114 &2880745294411758883
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8945547735865917192}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1509750782ac84b48bc304838f5376dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: OctagonFighter.Infrastructure::OctagonFighter.Infrastructure.Input.PlayerIntentSource
+--- !u!114 &2118846769059970612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8945547735865917192}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab278dbdb7342ee459a9bd5e4d869e5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: OctagonFighter.Presentation::OctagonFighter.Presentation.Fighter.FighterView
+  _animator: {fileID: 8404498187474888260}
+  _speedDamping: 0.1
+--- !u!114 &9220890536647227054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8945547735865917192}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cad0c6bafc3e1c2419af7bffa41da4eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: OctagonFighter.Presentation::OctagonFighter.Presentation.Fighter.FighterController
+  _definition: {fileID: 11400000, guid: 46321aa11d5ae8847ac74aef255b0ce5, type: 2}
+  _intentSourceBehaviour: {fileID: 2880745294411758883}
+  _motor: {fileID: 5434129528249814727}
+  _view: {fileID: 2118846769059970612}
+  _ticksPerSecond: 60
+  _autoTick: 1
+--- !u!1001 &2722517489360198613
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5138892866318323631}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -5186040283420600561, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.079144515
+      objectReference: {fileID: 0}
+    - target: {fileID: -5186040283420600561, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.04497573
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_Name
+      value: Model
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 948b503055edcd147a589ab2d9380005, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7786069764924437173, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.072793454
+      objectReference: {fileID: 0}
+    - target: {fileID: 7786069764924437173, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.034243565
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+--- !u!4 &2468793132501122110 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+  m_PrefabInstance: {fileID: 2722517489360198613}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &8404498187474888260 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
+  m_PrefabInstance: {fileID: 2722517489360198613}
+  m_PrefabAsset: {fileID: 0}

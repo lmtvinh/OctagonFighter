@@ -28,7 +28,7 @@ namespace OctagonFighter.Domain.StateMachine
         /// </summary>
         public TickId Tick { get; }
 
-        internal FighterStateChangedEvent(
+        public FighterStateChangedEvent(
             FighterId fighterId,
             FighterStateId previousState,
             FighterStateId currentState,

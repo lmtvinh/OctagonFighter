@@ -139,7 +139,7 @@ namespace OctagonFighter.Domain.Stamina
                 _currentStamina = MathF.Min(_profile.MaxStamina, _currentStamina + regenAmount);
             }
 
-            if (!MathF.Approximately(previousStamina, _currentStamina))
+            if (MathF.Abs(previousStamina - _currentStamina) > 0.000001f)
             {
                 RaiseChanged(previousStamina);
                 UpdateTier();

@@ -4,7 +4,8 @@
     "references": [
         "OctagonFighter.Core",
         "OctagonFighter.Domain",
-        "OctagonFighter.Application"
+        "OctagonFighter.Application",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

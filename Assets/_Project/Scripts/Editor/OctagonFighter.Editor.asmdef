@@ -1,0 +1,24 @@
+{
+    "name": "OctagonFighter.Editor",
+    "rootNamespace": "OctagonFighter.Editor",
+    "references": [
+        "OctagonFighter.Core",
+        "OctagonFighter.Domain",
+        "OctagonFighter.Application",
+        "OctagonFighter.Data",
+        "OctagonFighter.Infrastructure",
+        "OctagonFighter.Presentation",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0919def1dbad2a8419c49645661c6e7c, type: 3}
+  m_Name: FD_Boxer
+  m_EditorClassIdentifier: OctagonFighter.Data::OctagonFighter.Data.Fighters.FighterDefinition
+  _id: boxer_01
+  _displayName: The Boxer
+  _attributes:
+    _strength: 65
+    _speed: 65
+    _cardio: 65
+    _durability: 65
+    _flexibility: 60
+    _composure: 60
+    _fightIq: 60
+  _body:
+    _heightMeters: 1.8
+    _reachMeters: 1.85
+    _weightClass: Welterweight
+    _stance: 0
+  _health:
+    _maxHealth: 100
+    _headTraumaLimit: 100
+    _bodyTraumaLimit: 100
+    _knockoutThreshold: 100
+  _stamina:
+    _maxStamina: 100
+    _regenPerSecond: 8
+    _regenDelaySeconds: 2
+    _tiers:
+      _freshThreshold: 0.75
+      _workingThreshold: 0.5
+      _tiredThreshold: 0.2
+    _tiredModifiers:
+      _speedMultiplier: 0.85
+      _damageMultiplier: 0.85
+      _defenseMultiplier: 0.9
+      _regenMultiplier: 0.75
+    _gassedModifiers:
+      _speedMultiplier: 0.65
+      _damageMultiplier: 0.7
+      _defenseMultiplier: 0.75
+      _regenMultiplier: 0.5
+  _movement:
+    _forwardSpeed: 2.6
+    _backwardSpeed: 2.1
+    _lateralSpeed: 2.3
+    _spawnDurationSeconds: 0.25
+    _dodgeDurationSeconds: 0.4
+    _hitReactionDurationSeconds: 0.35
+    _knockdownDurationSeconds: 1.5
+    _recoveryDurationSeconds: 0.8

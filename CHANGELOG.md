@@ -14,6 +14,13 @@ The project follows [Semantic Versioning](https://semver.org/) and
 - `COMBAT_ARCHITECTURE.md` defining the Core Combat Foundation design for fighter data,
   controller orchestration, state machine, health, stamina, and hit detection. This
   milestone is design-only; no runtime combat code or punch mechanics were implemented.
+- Missing `Assets/_Project/Art`, `Assets/_Project/Audio`, and `Assets/_Project/Prefabs`
+  folders required by the documented project structure.
+
+### Changed
+
+- Moved the sample scene from `Assets/Scenes` to `Assets/_Project/Scenes` to match the
+  documented project structure. Scene GUIDs were preserved.
 
 ### Planned
 

@@ -9,6 +9,12 @@ The project follows [Semantic Versioning](https://semver.org/) and
 
 ## [Unreleased]
 
+### Added
+
+- `COMBAT_ARCHITECTURE.md` defining the Core Combat Foundation design for fighter data,
+  controller orchestration, state machine, health, stamina, and hit detection. This
+  milestone is design-only; no runtime combat code or punch mechanics were implemented.
+
 ### Planned
 
 - Core Combat Foundation: fixed-tick combat clock, health, stamina, strikes, hit

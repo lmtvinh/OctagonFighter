@@ -69,6 +69,7 @@ OctagonFighter/
 ├── Packages/                   # UPM Packages (manifest tracked)
 ├── ProjectSettings/            # Unity Project Settings
 ├── OPENCODE.md                 # Engineering Standards & Architecture
+├── COMBAT_ARCHITECTURE.md      # Core Combat Foundation Design
 ├── GAME_DESIGN_DOCUMENT.md     # Game Design Document
 ├── README.md                   # This File
 ├── ROADMAP.md                  # Development Roadmap
@@ -116,6 +117,7 @@ OctagonFighter/
 | Document | Purpose |
 | --- | --- |
 | [OPENCODE.md](OPENCODE.md) | Architecture rules, coding standards, Unity standards, AI assistant rules |
+| [COMBAT_ARCHITECTURE.md](COMBAT_ARCHITECTURE.md) | Core combat foundation design: fighter data, controller, state machine, health, stamina, hit detection |
 | [GAME_DESIGN_DOCUMENT.md](GAME_DESIGN_DOCUMENT.md) | Complete game design, systems, modes, progression |
 | [ROADMAP.md](ROADMAP.md) | Development milestones and priorities |
 | [CHANGELOG.md](CHANGELOG.md) | Release history and changes |

@@ -62,6 +62,7 @@ setup.
 
 | Status | Deliverable |
 | --- | --- |
+| `[x]` | Core Combat Foundation architecture design ([COMBAT_ARCHITECTURE.md](COMBAT_ARCHITECTURE.md)) |
 | `[ ]` | Layer assembly definitions (`Domain`, `Application`, `Infrastructure`, `Presentation`, `Editor`, tests) |
 | `[ ]` | Fixed-tick `CombatClock` and seeded deterministic RNG |
 | `[ ]` | Core combat contracts and immutable event/result structs |

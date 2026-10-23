@@ -1,0 +1,16 @@
+{
+    "name": "OctagonFighter.Domain",
+    "rootNamespace": "OctagonFighter.Domain",
+    "references": [
+        "OctagonFighter.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

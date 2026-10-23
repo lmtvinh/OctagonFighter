@@ -54,6 +54,8 @@ MonoBehaviour:
     _forwardSpeed: 2.6
     _backwardSpeed: 2.1
     _lateralSpeed: 2.3
+    _walkSpeedMultiplier: 0.55
+    _rotationDegreesPerSecond: 720
     _spawnDurationSeconds: 0.25
     _dodgeDurationSeconds: 0.4
     _hitReactionDurationSeconds: 0.35

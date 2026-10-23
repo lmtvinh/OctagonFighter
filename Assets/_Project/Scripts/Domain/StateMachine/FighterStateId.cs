@@ -16,9 +16,9 @@ namespace OctagonFighter.Domain.StateMachine
         Idle = 1,
 
         /// <summary>
-        /// Intent-driven movement.
+        /// Intent-driven walking movement.
         /// </summary>
-        Locomotion = 2,
+        Walk = 2,
 
         /// <summary>
         /// Defensive blocking stance.
@@ -53,6 +53,11 @@ namespace OctagonFighter.Domain.StateMachine
         /// <summary>
         /// Terminal defeated state.
         /// </summary>
-        Defeated = 9
+        Defeated = 9,
+
+        /// <summary>
+        /// Intent-driven running movement.
+        /// </summary>
+        Run = 10
     }
 }

@@ -36,7 +36,7 @@ namespace OctagonFighter.Domain.StateMachine.States
             }
 
             return intent.IsMovementRequested
-                ? StateTickResult.TransitionTo(FighterStateId.Locomotion)
+                ? StateTickResult.TransitionTo(GetLocomotionState(intent))
                 : StateTickResult.TransitionTo(FighterStateId.Idle);
         }
 
@@ -44,7 +44,7 @@ namespace OctagonFighter.Domain.StateMachine.States
         protected override bool IsTransitionAllowed(FighterStateId targetState)
         {
             return targetState == FighterStateId.Idle ||
-                   targetState == FighterStateId.Locomotion ||
+                   IsLocomotionState(targetState) ||
                    targetState == FighterStateId.Dodging ||
                    IsInterruptState(targetState);
         }

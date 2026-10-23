@@ -18,9 +18,19 @@ namespace OctagonFighter.Domain.Fighters
         public float BackwardSpeed { get; }
 
         /// <summary>
-        /// Gets lateral movement speed in meters per second.
+        /// Gets the lateral movement speed in meters per second.
         /// </summary>
         public float LateralSpeed { get; }
+
+        /// <summary>
+        /// Gets the fraction of the movement speeds used while walking.
+        /// </summary>
+        public float WalkSpeedMultiplier { get; }
+
+        /// <summary>
+        /// Gets the maximum character rotation speed in degrees per second.
+        /// </summary>
+        public float RotationDegreesPerSecond { get; }
 
         /// <summary>
         /// Gets the spawn lock duration in seconds.
@@ -59,11 +69,15 @@ namespace OctagonFighter.Domain.Fighters
             float dodgeDurationSeconds,
             float hitReactionDurationSeconds,
             float knockdownDurationSeconds,
-            float recoveryDurationSeconds)
+            float recoveryDurationSeconds,
+            float walkSpeedMultiplier = 0.55f,
+            float rotationDegreesPerSecond = 720f)
         {
             ValidateSpeed(forwardSpeed, nameof(forwardSpeed));
             ValidateSpeed(backwardSpeed, nameof(backwardSpeed));
             ValidateSpeed(lateralSpeed, nameof(lateralSpeed));
+            ValidateWalkSpeedMultiplier(walkSpeedMultiplier, nameof(walkSpeedMultiplier));
+            ValidateRotationSpeed(rotationDegreesPerSecond, nameof(rotationDegreesPerSecond));
             ValidateDuration(spawnDurationSeconds, nameof(spawnDurationSeconds));
             ValidateDuration(dodgeDurationSeconds, nameof(dodgeDurationSeconds));
             ValidateDuration(hitReactionDurationSeconds, nameof(hitReactionDurationSeconds));
@@ -73,6 +87,8 @@ namespace OctagonFighter.Domain.Fighters
             ForwardSpeed = forwardSpeed;
             BackwardSpeed = backwardSpeed;
             LateralSpeed = lateralSpeed;
+            WalkSpeedMultiplier = walkSpeedMultiplier;
+            RotationDegreesPerSecond = rotationDegreesPerSecond;
             SpawnDurationSeconds = spawnDurationSeconds;
             DodgeDurationSeconds = dodgeDurationSeconds;
             HitReactionDurationSeconds = hitReactionDurationSeconds;
@@ -85,6 +101,26 @@ namespace OctagonFighter.Domain.Fighters
             if (!float.IsFinite(value) || value < 0f)
             {
                 throw new ArgumentOutOfRangeException(parameterName, "Movement speeds must be finite and non-negative.");
+            }
+        }
+
+        private static void ValidateRotationSpeed(float value, string parameterName)
+        {
+            if (!float.IsFinite(value) || value <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    parameterName,
+                    "Rotation speed must be finite and positive.");
+            }
+        }
+
+        private static void ValidateWalkSpeedMultiplier(float value, string parameterName)
+        {
+            if (!float.IsFinite(value) || value <= 0f || value > 1f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    parameterName,
+                    "The walk speed multiplier must be finite and within (0, 1].");
             }
         }
 

@@ -11,13 +11,15 @@ The project follows [Semantic Versioning](https://semver.org/) and
 
 ### Added
 
+- Phase 2 Character Locomotion: dedicated `WalkState` and `RunState` in the fighter state machine, `MovementGait` intent data, data-driven walk speed scaling, and profile-driven character rotation.
+- Player movement input with walk/run selection (`Left Ctrl`, gamepad left trigger, or left stick click), a passive intent source for the demo opponent, and `FighterView` speed blending into the animator.
+- Generated `AC_Fighter_Base.controller` with a 1D `Locomotion` blend tree driven by the `Speed` parameter and idle/walk/run Mixamo clips.
+- EditMode locomotion transition tests and `PHASE2_VALIDATION.md` demo scene checklist.
+- `FighterAssetBuilder` replacing `Phase1AssetBuilder`, with asset rebuild and locomotion validation menu items.
 - Phase 1 Core Combat Foundation runtime: `FighterDefinition` ScriptableObject with validated authoring profiles, domain `FighterData` snapshots, `HealthModel`/`StaminaModel`, foundation `FighterStateMachine`, `FighterRuntime`, and `FoundationStateMachineFactory`.
 - Unity adapters and orchestration: `HealthComponent`, `StaminaComponent`, `PlayerIntentSource`, `FighterMotor`, `CombatTickDriver`, `CombatSession`, `FighterController`, `FighterView` using the imported Mixamo `boxer.fbx` with a generated base animator controller.
 - Playable fighter prefab architecture: `Assets/_Project/Prefabs/Fighters/PF_Fighter_Boxer.prefab` built from the Mixamo character with intent-driven movement/block/dodge, fixed-tick simulation, and readable state transitions. Demo scene `Assets/_Project/Scenes/CombatTest.unity` added to build settings.
-- Editor tooling: `OctagonFighter.Editor` assembly and `Phase1AssetBuilder` to rebuild fighter assets/scenes from Mixamo imports.
-
-### Added
-
+- Editor tooling: `OctagonFighter.Editor` assembly and `FighterAssetBuilder` to rebuild fighter assets/scenes from Mixamo imports.
 - `COMBAT_ARCHITECTURE.md` defining the Core Combat Foundation design for fighter data,
   controller orchestration, state machine, health, stamina, and hit detection. This
   milestone is design-only; no runtime combat code or punch mechanics were implemented.
@@ -26,6 +28,10 @@ The project follows [Semantic Versioning](https://semver.org/) and
 
 ### Changed
 
+- Replaced the generic `Locomotion` state with separate `Walk` and `Run` states so gait,
+  movement speed, and animation blending are explicit and independently extensible.
+- Moved character rotation speed and walk speed scaling out of the Unity motor and into
+  the authored `MovementProfile`.
 - Moved the sample scene from `Assets/Scenes` to `Assets/_Project/Scenes` to match the
   documented project structure. Scene GUIDs were preserved.
 

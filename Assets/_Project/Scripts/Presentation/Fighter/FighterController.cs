@@ -187,8 +187,8 @@ namespace OctagonFighter.Presentation.Fighter
             _runtime.Tick(deltaSeconds);
 
             FighterIntent intent = _runtime.CurrentIntent;
-            _motor.Tick(intent.Move, _runtime.CurrentMovementAuthority, deltaSeconds);
-            _view?.Apply(_runtime.Snapshot, intent.Move, _runtime.CurrentMovementAuthority);
+            _motor.Tick(intent.Move, intent.Gait, _runtime.CurrentMovementAuthority, deltaSeconds);
+            _view?.Apply(_runtime.Snapshot, intent, _runtime.CurrentMovementAuthority);
         }
 
         private void Awake()

@@ -13,7 +13,6 @@ namespace OctagonFighter.Infrastructure.Movement
     public sealed class FighterMotor : MonoBehaviour
     {
         [Header("Adapter")]
-        [SerializeField, Min(0f)] private float _rotationDegreesPerSecond = 720f;
         [SerializeField] private float _gravity = -20f;
         [SerializeField, Range(0f, 1f)] private float _limitedAuthorityScale = 0.45f;
 
@@ -63,7 +62,11 @@ namespace OctagonFighter.Infrastructure.Movement
         /// </summary>
         /// <exception cref="InvalidOperationException">Thrown when the motor has not been initialized.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the delta time is invalid.</exception>
-        public void Tick(Float2 move, MovementAuthority authority, float deltaSeconds)
+        public void Tick(
+            Float2 move,
+            MovementGait gait,
+            MovementAuthority authority,
+            float deltaSeconds)
         {
             if (!_isInitialized)
             {
@@ -81,12 +84,15 @@ namespace OctagonFighter.Infrastructure.Movement
             {
                 float forwardSpeed = move.Y >= 0f ? _profile.ForwardSpeed : _profile.BackwardSpeed;
                 float authorityScale = authority == MovementAuthority.Limited ? _limitedAuthorityScale : 1f;
-                float maximumSpeed = Mathf.Max(_profile.ForwardSpeed, _profile.LateralSpeed);
+                float gaitScale = authority == MovementAuthority.Full && gait == MovementGait.Run
+                    ? 1f
+                    : _profile.WalkSpeedMultiplier;
+                float maximumSpeed = Mathf.Max(_profile.ForwardSpeed, _profile.LateralSpeed) * gaitScale;
 
                 var desired = new Vector3(
                     move.X * _profile.LateralSpeed,
                     0f,
-                    move.Y * forwardSpeed);
+                    move.Y * forwardSpeed) * gaitScale;
 
                 PlanarVelocity = Vector3.ClampMagnitude(desired, maximumSpeed) * authorityScale;
                 RotateTowards(PlanarVelocity, deltaSeconds);
@@ -110,7 +116,7 @@ namespace OctagonFighter.Infrastructure.Movement
             transform.rotation = Quaternion.RotateTowards(
                 transform.rotation,
                 targetRotation,
-                _rotationDegreesPerSecond * deltaSeconds);
+                _profile.RotationDegreesPerSecond * deltaSeconds);
         }
 
         private void UpdateVerticalVelocity(float deltaSeconds)

@@ -67,5 +67,24 @@ namespace OctagonFighter.Domain.StateMachine
                    targetState == FighterStateId.KnockedDown ||
                    targetState == FighterStateId.Defeated;
         }
+
+        /// <summary>
+        /// Selects the locomotion state that matches the requested gait.
+        /// </summary>
+        protected static FighterStateId GetLocomotionState(in FighterIntent intent)
+        {
+            return intent.Gait == MovementGait.Run
+                ? FighterStateId.Run
+                : FighterStateId.Walk;
+        }
+
+        /// <summary>
+        /// Determines whether a target is one of the locomotion states.
+        /// </summary>
+        protected static bool IsLocomotionState(FighterStateId targetState)
+        {
+            return targetState == FighterStateId.Walk ||
+                   targetState == FighterStateId.Run;
+        }
     }
 }

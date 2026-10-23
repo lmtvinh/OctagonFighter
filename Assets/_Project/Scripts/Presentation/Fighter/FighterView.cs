@@ -1,4 +1,3 @@
-using OctagonFighter.Core.Math;
 using OctagonFighter.Domain.Fighters;
 using OctagonFighter.Domain.StateMachine;
 using UnityEngine;
@@ -16,6 +15,8 @@ namespace OctagonFighter.Presentation.Fighter
 
         [SerializeField] private Animator _animator;
         [SerializeField, Min(0f)] private float _speedDamping = 0.1f;
+        [SerializeField, Range(0f, 1f)] private float _walkBlendSpeed = 0.5f;
+        [SerializeField, Range(0f, 1f)] private float _runBlendSpeed = 1f;
 
         private bool _hasSpeed;
         private bool _hasBlocking;
@@ -54,16 +55,28 @@ namespace OctagonFighter.Presentation.Fighter
         }
 
         /// <summary>
-        /// Applies a simulation snapshot to the view.
+        /// Applies a simulation snapshot and the consumed intent to the view.
         /// </summary>
-        public void Apply(FighterSnapshot snapshot, Float2 move, MovementAuthority authority)
+        public void Apply(
+            in FighterSnapshot snapshot,
+            in FighterIntent intent,
+            MovementAuthority authority)
         {
             if (_animator == null)
             {
                 return;
             }
 
-            float speed = authority == MovementAuthority.None ? 0f : move.Magnitude;
+            float speed = 0f;
+            if (authority != MovementAuthority.None && intent.IsMovementRequested)
+            {
+                float gaitBlend = authority == MovementAuthority.Full &&
+                                  intent.Gait == MovementGait.Run
+                    ? _runBlendSpeed
+                    : _walkBlendSpeed;
+
+                speed = Mathf.Clamp01(intent.Move.Magnitude) * gaitBlend;
+            }
 
             if (_hasSpeed)
             {

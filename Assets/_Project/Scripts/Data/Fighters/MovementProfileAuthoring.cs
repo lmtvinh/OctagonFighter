@@ -19,6 +19,12 @@ namespace OctagonFighter.Data.Fighters
         [Min(0f)]
         [SerializeField] private float _lateralSpeed;
 
+        [Range(0.01f, 1f)]
+        [SerializeField] private float _walkSpeedMultiplier;
+
+        [Min(0f)]
+        [SerializeField] private float _rotationDegreesPerSecond;
+
         [Min(0f)]
         [SerializeField] private float _spawnDurationSeconds;
 
@@ -45,11 +51,15 @@ namespace OctagonFighter.Data.Fighters
             float dodgeDurationSeconds,
             float hitReactionDurationSeconds,
             float knockdownDurationSeconds,
-            float recoveryDurationSeconds)
+            float recoveryDurationSeconds,
+            float walkSpeedMultiplier = 0.55f,
+            float rotationDegreesPerSecond = 720f)
         {
             _forwardSpeed = forwardSpeed;
             _backwardSpeed = backwardSpeed;
             _lateralSpeed = lateralSpeed;
+            _walkSpeedMultiplier = walkSpeedMultiplier;
+            _rotationDegreesPerSecond = rotationDegreesPerSecond;
             _spawnDurationSeconds = spawnDurationSeconds;
             _dodgeDurationSeconds = dodgeDurationSeconds;
             _hitReactionDurationSeconds = hitReactionDurationSeconds;
@@ -62,7 +72,17 @@ namespace OctagonFighter.Data.Fighters
         /// </summary>
         public static MovementProfileAuthoring CreateDefault()
         {
-            return new MovementProfileAuthoring(2.6f, 2.1f, 2.3f, 0.25f, 0.4f, 0.35f, 1.5f, 0.8f);
+            return new MovementProfileAuthoring(
+                2.6f,
+                2.1f,
+                2.3f,
+                0.25f,
+                0.4f,
+                0.35f,
+                1.5f,
+                0.8f,
+                0.55f,
+                720f);
         }
 
         /// <summary>
@@ -78,7 +98,9 @@ namespace OctagonFighter.Data.Fighters
                 _dodgeDurationSeconds,
                 _hitReactionDurationSeconds,
                 _knockdownDurationSeconds,
-                _recoveryDurationSeconds);
+                _recoveryDurationSeconds,
+                _walkSpeedMultiplier,
+                _rotationDegreesPerSecond);
         }
 
         /// <summary>
@@ -101,6 +123,20 @@ namespace OctagonFighter.Data.Fighters
             if (!IsValidSpeed(_lateralSpeed))
             {
                 error = "Lateral speed must be finite and non-negative.";
+                return false;
+            }
+
+            if (!float.IsFinite(_walkSpeedMultiplier) ||
+                _walkSpeedMultiplier <= 0f ||
+                _walkSpeedMultiplier > 1f)
+            {
+                error = "Walk speed multiplier must be finite and within (0, 1].";
+                return false;
+            }
+
+            if (!float.IsFinite(_rotationDegreesPerSecond) || _rotationDegreesPerSecond <= 0f)
+            {
+                error = "Rotation speed must be finite and positive.";
                 return false;
             }
 

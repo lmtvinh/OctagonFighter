@@ -35,6 +35,11 @@ namespace OctagonFighter.Domain.Fighters
         public bool IsCommandHeld { get; }
 
         /// <summary>
+        /// Gets the requested movement gait.
+        /// </summary>
+        public MovementGait Gait { get; }
+
+        /// <summary>
         /// Gets the tick this intent belongs to.
         /// </summary>
         public TickId Tick { get; }
@@ -45,7 +50,7 @@ namespace OctagonFighter.Domain.Fighters
         public bool IsMovementRequested => Move.SqrMagnitude > 0f;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FighterIntent"/> struct.
+        /// Initializes a new instance of the <see cref="FighterIntent"/> struct using a walking gait.
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when movement is not finite.</exception>
         /// <exception cref="ArgumentException">Thrown when the command is undefined.</exception>
@@ -54,6 +59,22 @@ namespace OctagonFighter.Domain.Fighters
             FighterCommand command,
             bool isCommandPressed,
             bool isCommandHeld,
+            TickId tick)
+            : this(move, command, isCommandPressed, isCommandHeld, MovementGait.Walk, tick)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FighterIntent"/> struct.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when movement is not finite.</exception>
+        /// <exception cref="ArgumentException">Thrown when the command or gait is undefined.</exception>
+        public FighterIntent(
+            Float2 move,
+            FighterCommand command,
+            bool isCommandPressed,
+            bool isCommandHeld,
+            MovementGait gait,
             TickId tick)
         {
             if (!move.IsFinite)
@@ -66,10 +87,16 @@ namespace OctagonFighter.Domain.Fighters
                 throw new ArgumentException("Command is not defined.", nameof(command));
             }
 
+            if (!Enum.IsDefined(typeof(MovementGait), gait))
+            {
+                throw new ArgumentException("Movement gait is not defined.", nameof(gait));
+            }
+
             Move = move.ClampMagnitude(1f);
             Command = command;
             IsCommandPressed = isCommandPressed;
             IsCommandHeld = isCommandHeld;
+            Gait = gait;
             Tick = tick;
         }
 
@@ -86,6 +113,7 @@ namespace OctagonFighter.Domain.Fighters
                 acceptsCommand ? Command : FighterCommand.None,
                 acceptsCommand && IsCommandPressed,
                 acceptsCommand && IsCommandHeld,
+                Gait,
                 Tick);
         }
 

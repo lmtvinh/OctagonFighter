@@ -39,7 +39,7 @@ namespace OctagonFighter.Domain.StateMachine.States
         protected override bool IsTransitionAllowed(FighterStateId targetState)
         {
             return targetState == FighterStateId.Idle ||
-                   targetState == FighterStateId.Locomotion ||
+                   IsLocomotionState(targetState) ||
                    targetState == FighterStateId.KnockedDown ||
                    targetState == FighterStateId.Defeated;
         }

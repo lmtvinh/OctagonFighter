@@ -3,16 +3,21 @@ using OctagonFighter.Domain.Fighters;
 namespace OctagonFighter.Domain.StateMachine.States
 {
     /// <summary>
-    /// Intent-driven movement state.
+    /// Shared intent-driven movement behavior for walk and run states.
     /// </summary>
-    public sealed class LocomotionState : FighterStateBase
+    public abstract class LocomotionStateBase : FighterStateBase
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="LocomotionState"/> class.
+        /// Gets the gait represented by this state.
         /// </summary>
-        public LocomotionState()
+        protected abstract MovementGait Gait { get; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LocomotionStateBase"/> class.
+        /// </summary>
+        protected LocomotionStateBase(FighterStateId locomotionState)
             : base(
-                FighterStateId.Locomotion,
+                locomotionState,
                 MovementAuthority.Full,
                 FighterIntentMask.Move | FighterIntentMask.Block | FighterIntentMask.Dodge,
                 10)
@@ -35,15 +40,21 @@ namespace OctagonFighter.Domain.StateMachine.States
                 return StateTickResult.TransitionTo(FighterStateId.Blocking);
             }
 
-            return intent.IsMovementRequested
+            if (!intent.IsMovementRequested)
+            {
+                return StateTickResult.TransitionTo(FighterStateId.Idle);
+            }
+
+            return intent.Gait == Gait
                 ? StateTickResult.Stay()
-                : StateTickResult.TransitionTo(FighterStateId.Idle);
+                : StateTickResult.TransitionTo(GetLocomotionState(intent));
         }
 
         /// <inheritdoc />
         protected override bool IsTransitionAllowed(FighterStateId targetState)
         {
             return targetState == FighterStateId.Idle ||
+                   IsLocomotionState(targetState) ||
                    targetState == FighterStateId.Blocking ||
                    targetState == FighterStateId.Dodging ||
                    IsInterruptState(targetState);

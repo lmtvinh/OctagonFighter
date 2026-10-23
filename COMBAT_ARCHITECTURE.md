@@ -442,7 +442,8 @@ interruption states only:
 | --- | --- | --- |
 | `Spawning` | One-time initialization and spawn protection | None |
 | `Idle` | Default standing state | None |
-| `Locomotion` | Intent-driven movement | Full |
+| `Walk` | Intent-driven walking movement | Full |
+| `Run` | Intent-driven running movement | Full |
 | `Blocking` | Held defensive stance | Limited |
 | `Dodging` | Timed evasive action | Limited |
 | `CommittedAction` | Generic locked state reserved for future combat actions | None |
@@ -462,12 +463,13 @@ Foundation transitions:
 | From | Allowed Targets |
 | --- | --- |
 | `Spawning` | `Idle`, `Defeated` |
-| `Idle` | `Locomotion`, `Blocking`, `Dodging`, `HitReaction`, `KnockedDown`, `Defeated` |
-| `Locomotion` | `Idle`, `Blocking`, `Dodging`, `HitReaction`, `KnockedDown`, `Defeated` |
-| `Blocking` | `Idle`, `Locomotion`, `HitReaction`, `KnockedDown`, `Defeated` |
-| `Dodging` | `Idle`, `Locomotion`, `HitReaction`, `KnockedDown`, `Defeated` |
-| `CommittedAction` | `Idle`, `Locomotion`, `HitReaction`, `KnockedDown`, `Defeated` |
-| `HitReaction` | `Idle`, `Locomotion`, `KnockedDown`, `Defeated` |
+| `Idle` | `Walk`, `Run`, `Blocking`, `Dodging`, `HitReaction`, `KnockedDown`, `Defeated` |
+| `Walk` | `Idle`, `Run`, `Blocking`, `Dodging`, `HitReaction`, `KnockedDown`, `Defeated` |
+| `Run` | `Idle`, `Walk`, `Blocking`, `Dodging`, `HitReaction`, `KnockedDown`, `Defeated` |
+| `Blocking` | `Idle`, `Walk`, `Run`, `HitReaction`, `KnockedDown`, `Defeated` |
+| `Dodging` | `Idle`, `Walk`, `Run`, `HitReaction`, `KnockedDown`, `Defeated` |
+| `CommittedAction` | `Idle`, `Walk`, `Run`, `HitReaction`, `KnockedDown`, `Defeated` |
+| `HitReaction` | `Idle`, `Walk`, `Run`, `KnockedDown`, `Defeated` |
 | `KnockedDown` | `Recovering`, `Defeated` |
 | `Recovering` | `Idle`, `Defeated` |
 | `Defeated` | none |

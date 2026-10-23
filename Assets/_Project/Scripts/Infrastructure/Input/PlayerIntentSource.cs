@@ -13,6 +13,7 @@ namespace OctagonFighter.Infrastructure.Input
     public sealed class PlayerIntentSource : MonoBehaviour, IFighterIntentSource
     {
         private InputAction _moveAction;
+        private InputAction _runAction;
         private InputAction _blockAction;
         private InputAction _dodgeAction;
         private bool _dodgeQueued;
@@ -21,6 +22,9 @@ namespace OctagonFighter.Infrastructure.Input
         public bool TryGetIntent(TickId tick, out FighterIntent intent)
         {
             Vector2 move = _moveAction != null ? _moveAction.ReadValue<Vector2>() : Vector2.zero;
+            MovementGait gait = _runAction != null && _runAction.IsPressed()
+                ? MovementGait.Run
+                : MovementGait.Walk;
             bool blockHeld = _blockAction != null && _blockAction.IsPressed();
             bool blockPressed = _blockAction != null && _blockAction.WasPressedThisFrame();
             bool dodgePressed = _dodgeQueued;
@@ -33,6 +37,7 @@ namespace OctagonFighter.Infrastructure.Input
                     FighterCommand.Dodge,
                     true,
                     false,
+                    gait,
                     tick);
                 return true;
             }
@@ -44,6 +49,7 @@ namespace OctagonFighter.Infrastructure.Input
                     FighterCommand.Block,
                     blockPressed,
                     true,
+                    gait,
                     tick);
                 return true;
             }
@@ -53,6 +59,7 @@ namespace OctagonFighter.Infrastructure.Input
                 FighterCommand.None,
                 false,
                 false,
+                gait,
                 tick);
             return true;
         }
@@ -72,6 +79,11 @@ namespace OctagonFighter.Infrastructure.Input
                 .With("Right", "<Keyboard>/rightArrow");
             _moveAction.AddBinding("<Gamepad>/leftStick");
 
+            _runAction = new InputAction("Run", InputActionType.Button);
+            _runAction.AddBinding("<Keyboard>/leftCtrl");
+            _runAction.AddBinding("<Gamepad>/leftTrigger");
+            _runAction.AddBinding("<Gamepad>/leftStickPress");
+
             _blockAction = new InputAction("Block", InputActionType.Button);
             _blockAction.AddBinding("<Keyboard>/space");
             _blockAction.AddBinding("<Gamepad>/rightShoulder");
@@ -86,6 +98,7 @@ namespace OctagonFighter.Infrastructure.Input
         private void OnEnable()
         {
             _moveAction?.Enable();
+            _runAction?.Enable();
             _blockAction?.Enable();
             _dodgeAction?.Enable();
         }
@@ -93,6 +106,7 @@ namespace OctagonFighter.Infrastructure.Input
         private void OnDisable()
         {
             _moveAction?.Disable();
+            _runAction?.Disable();
             _blockAction?.Disable();
             _dodgeAction?.Disable();
             _dodgeQueued = false;
@@ -109,6 +123,9 @@ namespace OctagonFighter.Infrastructure.Input
 
             _moveAction?.Dispose();
             _moveAction = null;
+
+            _runAction?.Dispose();
+            _runAction = null;
 
             _blockAction?.Dispose();
             _blockAction = null;

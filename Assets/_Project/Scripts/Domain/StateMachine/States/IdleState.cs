@@ -36,14 +36,14 @@ namespace OctagonFighter.Domain.StateMachine.States
             }
 
             return intent.IsMovementRequested
-                ? StateTickResult.TransitionTo(FighterStateId.Locomotion)
+                ? StateTickResult.TransitionTo(GetLocomotionState(intent))
                 : StateTickResult.Stay();
         }
 
         /// <inheritdoc />
         protected override bool IsTransitionAllowed(FighterStateId targetState)
         {
-            return targetState == FighterStateId.Locomotion ||
+            return IsLocomotionState(targetState) ||
                    targetState == FighterStateId.Blocking ||
                    targetState == FighterStateId.Dodging ||
                    IsInterruptState(targetState);

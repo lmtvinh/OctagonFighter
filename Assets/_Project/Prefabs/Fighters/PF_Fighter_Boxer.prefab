@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &8945547735865917192
+--- !u!1 &7121170525539711634
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,14 +8,14 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5138892866318323631}
-  - component: {fileID: 6957056801346696042}
-  - component: {fileID: 3601974644913026428}
-  - component: {fileID: 287321346793554248}
-  - component: {fileID: 5434129528249814727}
-  - component: {fileID: 2880745294411758883}
-  - component: {fileID: 2118846769059970612}
-  - component: {fileID: 9220890536647227054}
+  - component: {fileID: 4816628868263949901}
+  - component: {fileID: 6539003985970271893}
+  - component: {fileID: 7680434565082107978}
+  - component: {fileID: 8605863622412185752}
+  - component: {fileID: 4507545515374631128}
+  - component: {fileID: 2521351430366172787}
+  - component: {fileID: 2738381748065221168}
+  - component: {fileID: 3997865432692721791}
   m_Layer: 0
   m_Name: PF_Fighter_Boxer
   m_TagString: Untagged
@@ -23,29 +23,29 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5138892866318323631
+--- !u!4 &4816628868263949901
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8945547735865917192}
+  m_GameObject: {fileID: 7121170525539711634}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2468793132501122110}
+  - {fileID: 3642372297367510794}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!143 &6957056801346696042
+--- !u!143 &6539003985970271893
 CharacterController:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8945547735865917192}
+  m_GameObject: {fileID: 7121170525539711634}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -64,96 +64,97 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.9, z: 0}
---- !u!114 &3601974644913026428
+--- !u!114 &7680434565082107978
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8945547735865917192}
+  m_GameObject: {fileID: 7121170525539711634}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 702b66ec1605e064a8db3559d24232b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: OctagonFighter.Infrastructure::OctagonFighter.Infrastructure.Health.HealthComponent
---- !u!114 &287321346793554248
+--- !u!114 &8605863622412185752
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8945547735865917192}
+  m_GameObject: {fileID: 7121170525539711634}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1eafe518f7ee1ae43bcae72d10c6aa6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: OctagonFighter.Infrastructure::OctagonFighter.Infrastructure.Stamina.StaminaComponent
---- !u!114 &5434129528249814727
+--- !u!114 &4507545515374631128
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8945547735865917192}
+  m_GameObject: {fileID: 7121170525539711634}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 85bfa7059f99e814e905644bbcee0c5e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: OctagonFighter.Infrastructure::OctagonFighter.Infrastructure.Movement.FighterMotor
-  _rotationDegreesPerSecond: 720
   _gravity: -20
   _limitedAuthorityScale: 0.45
---- !u!114 &2880745294411758883
+--- !u!114 &2521351430366172787
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8945547735865917192}
+  m_GameObject: {fileID: 7121170525539711634}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1509750782ac84b48bc304838f5376dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: OctagonFighter.Infrastructure::OctagonFighter.Infrastructure.Input.PlayerIntentSource
---- !u!114 &2118846769059970612
+--- !u!114 &2738381748065221168
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8945547735865917192}
+  m_GameObject: {fileID: 7121170525539711634}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ab278dbdb7342ee459a9bd5e4d869e5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: OctagonFighter.Presentation::OctagonFighter.Presentation.Fighter.FighterView
-  _animator: {fileID: 8404498187474888260}
+  _animator: {fileID: 7236267118754104688}
   _speedDamping: 0.1
---- !u!114 &9220890536647227054
+  _walkBlendSpeed: 0.5
+  _runBlendSpeed: 1
+--- !u!114 &3997865432692721791
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8945547735865917192}
+  m_GameObject: {fileID: 7121170525539711634}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cad0c6bafc3e1c2419af7bffa41da4eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: OctagonFighter.Presentation::OctagonFighter.Presentation.Fighter.FighterController
   _definition: {fileID: 11400000, guid: 46321aa11d5ae8847ac74aef255b0ce5, type: 2}
-  _intentSourceBehaviour: {fileID: 2880745294411758883}
-  _motor: {fileID: 5434129528249814727}
-  _view: {fileID: 2118846769059970612}
+  _intentSourceBehaviour: {fileID: 2521351430366172787}
+  _motor: {fileID: 4507545515374631128}
+  _view: {fileID: 2738381748065221168}
   _ticksPerSecond: 60
   _autoTick: 1
---- !u!1001 &2722517489360198613
+--- !u!1001 &3821013132603373793
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 5138892866318323631}
+    m_TransformParent: {fileID: 4816628868263949901}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
       propertyPath: m_LocalPosition.x
@@ -228,13 +229,13 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
---- !u!4 &2468793132501122110 stripped
+--- !u!4 &3642372297367510794 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
-  m_PrefabInstance: {fileID: 2722517489360198613}
+  m_PrefabInstance: {fileID: 3821013132603373793}
   m_PrefabAsset: {fileID: 0}
---- !u!95 &8404498187474888260 stripped
+--- !u!95 &7236267118754104688 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 9724db25c31d0d14797746c9d1cef766, type: 3}
-  m_PrefabInstance: {fileID: 2722517489360198613}
+  m_PrefabInstance: {fileID: 3821013132603373793}
   m_PrefabAsset: {fileID: 0}

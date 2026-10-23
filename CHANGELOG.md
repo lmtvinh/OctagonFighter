@@ -11,6 +11,13 @@ The project follows [Semantic Versioning](https://semver.org/) and
 
 ### Added
 
+- Phase 1 Core Combat Foundation runtime: `FighterDefinition` ScriptableObject with validated authoring profiles, domain `FighterData` snapshots, `HealthModel`/`StaminaModel`, foundation `FighterStateMachine`, `FighterRuntime`, and `FoundationStateMachineFactory`.
+- Unity adapters and orchestration: `HealthComponent`, `StaminaComponent`, `PlayerIntentSource`, `FighterMotor`, `CombatTickDriver`, `CombatSession`, `FighterController`, `FighterView` using the imported Mixamo `boxer.fbx` with a generated base animator controller.
+- Playable fighter prefab architecture: `Assets/_Project/Prefabs/Fighters/PF_Fighter_Boxer.prefab` built from the Mixamo character with intent-driven movement/block/dodge, fixed-tick simulation, and readable state transitions. Demo scene `Assets/_Project/Scenes/CombatTest.unity` added to build settings.
+- Editor tooling: `OctagonFighter.Editor` assembly and `Phase1AssetBuilder` to rebuild fighter assets/scenes from Mixamo imports.
+
+### Added
+
 - `COMBAT_ARCHITECTURE.md` defining the Core Combat Foundation design for fighter data,
   controller orchestration, state machine, health, stamina, and hit detection. This
   milestone is design-only; no runtime combat code or punch mechanics were implemented.

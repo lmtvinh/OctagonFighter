@@ -42,9 +42,13 @@ namespace OctagonFighter.Editor
             EnsureFolder("Assets/_Project/ScriptableObjects/Fighters");
             EnsureFolder("Assets/_Project/Prefabs/Fighters");
 
-            string idlePath = RequireAnimationPath("idle");
+            string idlePath = "Assets/_Project/Art/Animations/Boxing.fbx";
             string walkPath = RequireAnimationPath("walk");
             string runPath = RequireAnimationPath("run");
+            if (!File.Exists(idlePath))
+            {
+                idlePath = RequireAnimationPath("idle");
+            }
 
             ConfigureHumanoidImport(BoxerModelPath);
             ConfigureHumanoidImport(idlePath);
@@ -267,9 +271,27 @@ namespace OctagonFighter.Editor
                 changed = true;
             }
 
-            if (importer.avatarSetup != ModelImporterAvatarSetup.CreateFromThisModel)
+            if (importer.avatarSetup != ModelImporterAvatarSetup.CopyFromOther)
             {
-                importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+                importer.avatarSetup = ModelImporterAvatarSetup.CopyFromOther;
+                changed = true;
+            }
+
+            Avatar sourceAvatar = null;
+            string[] avatarGuids = AssetDatabase.FindAssets("t:Avatar");
+            sourceAvatar = avatarGuids
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Select(AssetDatabase.LoadAssetAtPath<Avatar>)
+                .FirstOrDefault(a => a != null);
+
+            if (sourceAvatar != null && importer.sourceAvatar != sourceAvatar)
+            {
+                importer.sourceAvatar = sourceAvatar;
+                importer.avatarSetup = ModelImporterAvatarSetup.CopyFromOther;
+                changed = true;
+            } else if (importer.avatarSetup != ModelImporterAvatarSetup.CopyFromOther)
+            {
+                importer.avatarSetup = ModelImporterAvatarSetup.CopyFromOther;
                 changed = true;
             }
 
@@ -325,18 +347,43 @@ namespace OctagonFighter.Editor
             EnsureLooping(walkClip, walkPath);
             EnsureLooping(runClip, runPath);
 
-            var blendTree = new BlendTree
+            BlendTree blendTree = new BlendTree
             {
                 name = BlendTreeName,
                 blendType = BlendTreeType.Simple1D,
                 blendParameter = SpeedParameterName,
-                useAutomaticThresholds = false
+                blendParameterY = "Blend",
+                useAutomaticThresholds = false,
+                minThreshold = 0f,
+                maxThreshold = 1f
             };
 
             AssetDatabase.AddObjectToAsset(blendTree, controller);
-            blendTree.AddChild(idleClip, 0f);
-            blendTree.AddChild(walkClip, WalkBlendThreshold);
-            blendTree.AddChild(runClip, 1f);
+
+            blendTree.children = new[]
+            {
+                new ChildMotion
+                {
+                    motion = idleClip,
+                    threshold = 0f,
+                    timeScale = 1f,
+                    directBlendParameter = SpeedParameterName
+                },
+                new ChildMotion
+                {
+                    motion = walkClip,
+                    threshold = WalkBlendThreshold,
+                    timeScale = 1f,
+                    directBlendParameter = SpeedParameterName
+                },
+                new ChildMotion
+                {
+                    motion = runClip,
+                    threshold = 1f,
+                    timeScale = 1f,
+                    directBlendParameter = SpeedParameterName
+                }
+            };
 
             AnimatorState locomotionState = stateMachine.AddState(LocomotionStateName);
             locomotionState.motion = blendTree;
@@ -371,13 +418,20 @@ namespace OctagonFighter.Editor
 
             if (clips.Length == 0)
             {
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                clips = AssetDatabase.LoadAllAssetsAtPath(path)
+                    .OfType<AnimationClip>()
+                    .Where(clip => !clip.name.StartsWith("__preview__"))
+                    .ToArray();
+            }
+
+            if (clips.Length == 0)
+            {
                 throw new InvalidOperationException($"No animation clip found in '{path}'.");
             }
 
             AnimationClip clip = clips
-                .OrderByDescending(candidate =>
-                    candidate.name.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
-                .ThenBy(candidate => candidate.name)
+                .OrderByDescending(c => c.length)
                 .First();
 
             Debug.Log($"Using animation clip '{clip.name}' from '{path}'.");

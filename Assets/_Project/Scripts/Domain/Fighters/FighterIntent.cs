@@ -101,6 +101,18 @@ namespace OctagonFighter.Domain.Fighters
         }
 
         /// <summary>
+        /// Returns a copy of this intent with a different command and command flags.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the command is undefined.</exception>
+        public FighterIntent WithCommand(
+            FighterCommand command,
+            bool isCommandPressed,
+            bool isCommandHeld)
+        {
+            return new FighterIntent(Move, command, isCommandPressed, isCommandHeld, Gait, Tick);
+        }
+
+        /// <summary>
         /// Removes inputs that are not accepted by a state.
         /// </summary>
         public FighterIntent Filter(FighterIntentMask acceptedIntents)
@@ -135,6 +147,10 @@ namespace OctagonFighter.Domain.Fighters
 
                 case FighterCommand.StandUp:
                     return FighterIntentMask.StandUp;
+
+                case FighterCommand.LightPunch:
+                case FighterCommand.HeavyPunch:
+                    return FighterIntentMask.Attack;
 
                 default:
                     return FighterIntentMask.None;

@@ -1,5 +1,6 @@
 using System;
 using OctagonFighter.Core.Ids;
+using OctagonFighter.Domain.Combat;
 using OctagonFighter.Domain.Health;
 using OctagonFighter.Domain.Stamina;
 
@@ -46,9 +47,14 @@ namespace OctagonFighter.Domain.Fighters
         public MovementProfile Movement { get; }
 
         /// <summary>
+        /// Gets the strikes available to this fighter.
+        /// </summary>
+        public AttackBook Attacks { get; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="FighterData"/> struct.
         /// </summary>
-        /// <exception cref="ArgumentException">Thrown when the display name is empty.</exception>
+        /// <exception cref="ArgumentException">Thrown when the display name or attack book is invalid.</exception>
         public FighterData(
             FighterId id,
             string displayName,
@@ -56,7 +62,8 @@ namespace OctagonFighter.Domain.Fighters
             BodyProfile body,
             HealthProfile health,
             StaminaProfile stamina,
-            MovementProfile movement)
+            MovementProfile movement,
+            AttackBook attacks)
         {
             if (id.IsEmpty)
             {
@@ -68,6 +75,11 @@ namespace OctagonFighter.Domain.Fighters
                 throw new ArgumentException("Display name must be specified.", nameof(displayName));
             }
 
+            if (!attacks.Light.IsDefined || !attacks.Heavy.IsDefined)
+            {
+                throw new ArgumentException("A light and heavy attack must be defined.", nameof(attacks));
+            }
+
             Id = id;
             DisplayName = displayName.Trim();
             Attributes = attributes;
@@ -75,6 +87,7 @@ namespace OctagonFighter.Domain.Fighters
             Health = health;
             Stamina = stamina;
             Movement = movement;
+            Attacks = attacks;
         }
     }
 }

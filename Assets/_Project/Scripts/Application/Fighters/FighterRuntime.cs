@@ -2,6 +2,7 @@ using System;
 using OctagonFighter.Application.Time;
 using OctagonFighter.Core.Ids;
 using OctagonFighter.Core.Time;
+using OctagonFighter.Domain.Combat;
 using OctagonFighter.Domain.Fighters;
 using OctagonFighter.Domain.Health;
 using OctagonFighter.Domain.Stamina;
@@ -20,6 +21,7 @@ namespace OctagonFighter.Application.Fighters
         private readonly FighterStateMachine _stateMachine;
         private readonly IFighterIntentSource _intentSource;
         private readonly ICombatClock _clock;
+        private readonly AttackTracker _attacks;
         private FighterSnapshot _snapshot;
         private bool _pendingDefeat;
         private bool _defeatAnnounced;
@@ -44,6 +46,11 @@ namespace OctagonFighter.Application.Fighters
         /// Gets the state machine.
         /// </summary>
         public FighterStateMachine StateMachine => _stateMachine;
+
+        /// <summary>
+        /// Gets the attack cooldown, input buffer, and hit-request tracker.
+        /// </summary>
+        public AttackTracker Attacks => _attacks;
 
         /// <summary>
         /// Gets the latest immutable snapshot.
@@ -71,6 +78,11 @@ namespace OctagonFighter.Application.Fighters
         public event Action<FighterDefeatedEvent> Defeated;
 
         /// <summary>
+        /// Occurs when an active strike frame requests hit resolution.
+        /// </summary>
+        public event Action<AttackHitRequest> HitRequested;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="FighterRuntime"/> class.
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when a dependency is null.</exception>
@@ -88,6 +100,7 @@ namespace OctagonFighter.Application.Fighters
             _stateMachine = stateMachine ?? throw new ArgumentNullException(nameof(stateMachine));
             _intentSource = intentSource ?? throw new ArgumentNullException(nameof(intentSource));
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+            _attacks = new AttackTracker(data.Attacks);
 
             _health.KnockedOut += OnHealthKnockedOut;
 

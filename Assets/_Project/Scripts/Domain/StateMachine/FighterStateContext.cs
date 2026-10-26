@@ -1,5 +1,6 @@
 using System;
 using OctagonFighter.Core.Time;
+using OctagonFighter.Domain.Combat;
 using OctagonFighter.Domain.Fighters;
 using OctagonFighter.Domain.Health;
 using OctagonFighter.Domain.Stamina;
@@ -32,6 +33,11 @@ namespace OctagonFighter.Domain.StateMachine
         public ICombatClock Clock { get; }
 
         /// <summary>
+        /// Gets the attack cooldown, input buffer, and hit-request tracker.
+        /// </summary>
+        public AttackTracker Attacks { get; }
+
+        /// <summary>
         /// Gets the latest fighter snapshot.
         /// </summary>
         public FighterSnapshot Snapshot { get; }
@@ -45,12 +51,14 @@ namespace OctagonFighter.Domain.StateMachine
             IHealthSource health,
             IStaminaSource stamina,
             ICombatClock clock,
+            AttackTracker attacks,
             FighterSnapshot snapshot)
         {
             Data = data;
             Health = health ?? throw new ArgumentNullException(nameof(health));
             Stamina = stamina ?? throw new ArgumentNullException(nameof(stamina));
             Clock = clock ?? throw new ArgumentNullException(nameof(clock));
+            Attacks = attacks ?? throw new ArgumentNullException(nameof(attacks));
             Snapshot = snapshot;
         }
     }

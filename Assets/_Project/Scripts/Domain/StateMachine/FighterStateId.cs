@@ -58,6 +58,16 @@ namespace OctagonFighter.Domain.StateMachine
         /// <summary>
         /// Intent-driven running movement.
         /// </summary>
-        Run = 10
+        Run = 10,
+
+        /// <summary>
+        /// Fast light strike (jab).
+        /// </summary>
+        LightPunch = 11,
+
+        /// <summary>
+        /// Slow heavy strike (cross).
+        /// </summary>
+        HeavyPunch = 12
     }
 }

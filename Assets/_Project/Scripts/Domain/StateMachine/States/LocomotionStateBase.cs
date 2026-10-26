@@ -1,3 +1,4 @@
+using OctagonFighter.Domain.Combat;
 using OctagonFighter.Domain.Fighters;
 
 namespace OctagonFighter.Domain.StateMachine.States
@@ -19,7 +20,7 @@ namespace OctagonFighter.Domain.StateMachine.States
             : base(
                 locomotionState,
                 MovementAuthority.Full,
-                FighterIntentMask.Move | FighterIntentMask.Block | FighterIntentMask.Dodge,
+                FighterIntentMask.Move | FighterIntentMask.Block | FighterIntentMask.Dodge | FighterIntentMask.Attack,
                 10)
         {
         }
@@ -30,6 +31,11 @@ namespace OctagonFighter.Domain.StateMachine.States
             in FighterIntent intent,
             float deltaSeconds)
         {
+            if (AttackSelection.TrySelect(intent, context, out FighterStateId attackState))
+            {
+                return StateTickResult.TransitionTo(attackState);
+            }
+
             if (intent.Command == FighterCommand.Dodge && intent.IsCommandPressed)
             {
                 return StateTickResult.TransitionTo(FighterStateId.Dodging);
@@ -55,6 +61,7 @@ namespace OctagonFighter.Domain.StateMachine.States
         {
             return targetState == FighterStateId.Idle ||
                    IsLocomotionState(targetState) ||
+                   IsAttackState(targetState) ||
                    targetState == FighterStateId.Blocking ||
                    targetState == FighterStateId.Dodging ||
                    IsInterruptState(targetState);

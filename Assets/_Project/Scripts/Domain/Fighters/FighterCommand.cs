@@ -33,6 +33,16 @@ namespace OctagonFighter.Domain.Fighters
         /// <summary>
         /// Attempt to stand up from a downed state.
         /// </summary>
-        StandUp = 5
+        StandUp = 5,
+
+        /// <summary>
+        /// Request the fast light strike (jab).
+        /// </summary>
+        LightPunch = 6,
+
+        /// <summary>
+        /// Request the slow heavy strike (cross).
+        /// </summary>
+        HeavyPunch = 7
     }
 }

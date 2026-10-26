@@ -86,5 +86,14 @@ namespace OctagonFighter.Domain.StateMachine
             return targetState == FighterStateId.Walk ||
                    targetState == FighterStateId.Run;
         }
+
+        /// <summary>
+        /// Determines whether a target is one of the striking states.
+        /// </summary>
+        protected static bool IsAttackState(FighterStateId targetState)
+        {
+            return targetState == FighterStateId.LightPunch ||
+                   targetState == FighterStateId.HeavyPunch;
+        }
     }
 }

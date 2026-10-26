@@ -41,6 +41,11 @@ namespace OctagonFighter.Domain.Fighters
         /// <summary>
         /// Stand-up command is accepted.
         /// </summary>
-        StandUp = 1 << 5
+        StandUp = 1 << 5,
+
+        /// <summary>
+        /// Light and heavy punch commands are accepted.
+        /// </summary>
+        Attack = 1 << 6
     }
 }

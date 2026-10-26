@@ -271,27 +271,13 @@ namespace OctagonFighter.Editor
                 changed = true;
             }
 
-            if (importer.avatarSetup != ModelImporterAvatarSetup.CopyFromOther)
+            // Every model must build an avatar from its own skeleton. Copying an avatar from an
+            // unrelated rig (for example a mixamorig7 animation onto the mixamorig5 boxer) leaves
+            // the model without a valid avatar, which silently removes its Animator and leaves the
+            // character in its bind pose (T-pose).
+            if (importer.avatarSetup != ModelImporterAvatarSetup.CreateFromThisModel)
             {
-                importer.avatarSetup = ModelImporterAvatarSetup.CopyFromOther;
-                changed = true;
-            }
-
-            Avatar sourceAvatar = null;
-            string[] avatarGuids = AssetDatabase.FindAssets("t:Avatar");
-            sourceAvatar = avatarGuids
-                .Select(AssetDatabase.GUIDToAssetPath)
-                .Select(AssetDatabase.LoadAssetAtPath<Avatar>)
-                .FirstOrDefault(a => a != null);
-
-            if (sourceAvatar != null && importer.sourceAvatar != sourceAvatar)
-            {
-                importer.sourceAvatar = sourceAvatar;
-                importer.avatarSetup = ModelImporterAvatarSetup.CopyFromOther;
-                changed = true;
-            } else if (importer.avatarSetup != ModelImporterAvatarSetup.CopyFromOther)
-            {
-                importer.avatarSetup = ModelImporterAvatarSetup.CopyFromOther;
+                importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
                 changed = true;
             }
 

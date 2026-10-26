@@ -92,11 +92,9 @@ namespace OctagonFighter.Presentation.Fighter
                 float magnitude = Mathf.Clamp01(intent.Move.Magnitude);
                 speed = magnitude * gaitBlend;
 
-                // Input is planar in world space; the blend tree expects it relative to the fighter
-                // so the same direction always reads as forward, backward, or strafe.
-                Vector3 localDirection = transform.InverseTransformDirection(
-                    new Vector3(intent.Move.X, 0f, intent.Move.Y));
-                Vector2 planar = new Vector2(localDirection.x, localDirection.z);
+                // Intent movement is combat-relative: X is the fighter's right and Y is toward the
+                // opponent, which is exactly the blend tree's lateral/forward layout.
+                var planar = new Vector2(intent.Move.X, intent.Move.Y);
                 if (planar.sqrMagnitude > 0.0001f)
                 {
                     move = planar.normalized * magnitude;

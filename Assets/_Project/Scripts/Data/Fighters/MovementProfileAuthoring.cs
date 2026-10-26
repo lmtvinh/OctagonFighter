@@ -75,7 +75,7 @@ namespace OctagonFighter.Data.Fighters
             return new MovementProfileAuthoring(
                 2.6f,
                 2.1f,
-                2.3f,
+                0.836f,
                 0.25f,
                 0.4f,
                 0.35f,

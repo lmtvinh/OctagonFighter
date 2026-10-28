@@ -58,6 +58,25 @@ namespace OctagonFighter.Domain.Fighters
         public float RecoveryDurationSeconds { get; }
 
         /// <summary>
+        /// Gets the configured planar speed in the supplied direction, before any additional
+        /// scaling. Lateral and forward/backward speeds are independent, so a diagonal input
+        /// produces the same speed the motor will apply for that direction.
+        /// </summary>
+        /// <param name="lateralDirection">Normalized lateral (right-positive) component.</param>
+        /// <param name="forwardDirection">Normalized forward (opponent-positive) component.</param>
+        /// <param name="speedScale">Optional multiplier, normally the walk-speed multiplier.</param>
+        public float GetPlanarSpeed(
+            float lateralDirection,
+            float forwardDirection,
+            float speedScale = 1f)
+        {
+            float forwardSpeed = forwardDirection >= 0f ? ForwardSpeed : BackwardSpeed;
+            float lateral = lateralDirection * LateralSpeed;
+            float forward = forwardDirection * forwardSpeed;
+            return MathF.Sqrt((lateral * lateral) + (forward * forward)) * speedScale;
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="MovementProfile"/> struct.
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when a speed or duration is invalid.</exception>

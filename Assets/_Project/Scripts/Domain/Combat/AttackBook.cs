@@ -76,33 +76,44 @@ namespace OctagonFighter.Domain.Combat
         /// <summary>
         /// Creates the default MVP strike set.
         /// </summary>
+        /// <remarks>
+        /// Timings are measured from the imported clips at 30 fps:
+        /// <c>Lead Jab.fbx</c> (1.500 s) reaches 90% of its extension between 0.375 s and 0.442 s
+        /// with a peak at 0.404 s, and <c>Jab Cross.fbx</c> (2.233 s) reaches 90% of the right hand's
+        /// extension between 0.613 s and 0.675 s with a peak at 0.638 s. The contact windows below
+        /// bracket those intervals and the recovery covers the hand's return to guard. The clips
+        /// carry a long idle tail, so the strike states end after the useful motion instead of
+        /// playing the whole file.
+        /// </remarks>
         public static AttackBook CreateDefault()
         {
             var light = new AttackDefinition(
                 "Jab",
                 "Jab",
-                0.12f,
-                0.08f,
-                0.20f,
+                0.36f,
+                0.11f,
+                0.23f,
                 0.35f,
                 6f,
                 8f,
-                1.05f,
-                0.32f,
-                HitRegion.Head);
+                0.95f,
+                0.06f,
+                HitRegion.Head,
+                StrikeHand.Left);
 
             var heavy = new AttackDefinition(
                 "Cross",
                 "Cross",
-                0.22f,
+                0.60f,
                 0.10f,
-                0.33f,
+                0.20f,
                 0.75f,
                 12f,
                 15f,
-                1.25f,
-                0.40f,
-                HitRegion.Head);
+                1.05f,
+                0.07f,
+                HitRegion.Head,
+                StrikeHand.Right);
 
             return new AttackBook(light, heavy, 0.25f);
         }

@@ -97,5 +97,48 @@ namespace OctagonFighter.Domain.Combat
             Radius = radius;
             Tick = tick;
         }
+
+        /// <summary>
+        /// Builds a query that sweeps the striking fist from its previous sample to its current one.
+        /// </summary>
+        /// <remarks>
+        /// A fist that has not moved (or has no previous sample) still probes a short distance along
+        /// the attacker's facing so a resting contact is not silently skipped. The sweep is clamped
+        /// to <paramref name="minimumDistance"/> to keep zero-length motion a valid physics query.
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the minimum distance is invalid.</exception>
+        public static HitQuery FromHandSweep(
+            HitId hitId,
+            FighterId attackerId,
+            Float3 previousHandPosition,
+            Float3 currentHandPosition,
+            Float3 facing,
+            float radius,
+            TickId tick,
+            float minimumDistance = 0.02f)
+        {
+            if (!float.IsFinite(minimumDistance) || minimumDistance <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(minimumDistance),
+                    "Minimum sweep distance must be finite and positive.");
+            }
+
+            float deltaX = currentHandPosition.X - previousHandPosition.X;
+            float deltaY = currentHandPosition.Y - previousHandPosition.Y;
+            float deltaZ = currentHandPosition.Z - previousHandPosition.Z;
+            float distance = MathF.Sqrt((deltaX * deltaX) + (deltaY * deltaY) + (deltaZ * deltaZ));
+            Float3 direction = distance > 0.0001f
+                ? new Float3(deltaX / distance, deltaY / distance, deltaZ / distance)
+                : facing;
+            return new HitQuery(
+                hitId,
+                attackerId,
+                previousHandPosition,
+                direction,
+                MathF.Max(distance, minimumDistance),
+                radius,
+                tick);
+        }
     }
 }

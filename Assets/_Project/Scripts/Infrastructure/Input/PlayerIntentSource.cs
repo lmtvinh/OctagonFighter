@@ -16,7 +16,11 @@ namespace OctagonFighter.Infrastructure.Input
         private InputAction _runAction;
         private InputAction _blockAction;
         private InputAction _dodgeAction;
+        private InputAction _lightPunchAction;
+        private InputAction _heavyPunchAction;
         private bool _dodgeQueued;
+        private bool _lightPunchQueued;
+        private bool _heavyPunchQueued;
 
         /// <inheritdoc />
         public bool TryGetIntent(TickId tick, out FighterIntent intent)
@@ -27,38 +31,44 @@ namespace OctagonFighter.Infrastructure.Input
                 : MovementGait.Walk;
             bool blockHeld = _blockAction != null && _blockAction.IsPressed();
             bool blockPressed = _blockAction != null && _blockAction.WasPressedThisFrame();
+            bool lightPunchPressed = _lightPunchQueued;
+            bool heavyPunchPressed = _heavyPunchQueued;
             bool dodgePressed = _dodgeQueued;
+            _lightPunchQueued = false;
+            _heavyPunchQueued = false;
             _dodgeQueued = false;
 
-            if (dodgePressed)
-            {
-                intent = new FighterIntent(
-                    new Float2(move.x, move.y),
-                    FighterCommand.Dodge,
-                    true,
-                    false,
-                    gait,
-                    tick);
-                return true;
-            }
+            FighterCommand command = FighterCommand.None;
+            bool isCommandPressed = false;
+            bool isCommandHeld = false;
 
-            if (blockHeld)
+            if (lightPunchPressed)
             {
-                intent = new FighterIntent(
-                    new Float2(move.x, move.y),
-                    FighterCommand.Block,
-                    blockPressed,
-                    true,
-                    gait,
-                    tick);
-                return true;
+                command = FighterCommand.LightPunch;
+                isCommandPressed = true;
+            }
+            else if (heavyPunchPressed)
+            {
+                command = FighterCommand.HeavyPunch;
+                isCommandPressed = true;
+            }
+            else if (dodgePressed)
+            {
+                command = FighterCommand.Dodge;
+                isCommandPressed = true;
+            }
+            else if (blockHeld)
+            {
+                command = FighterCommand.Block;
+                isCommandPressed = blockPressed;
+                isCommandHeld = true;
             }
 
             intent = new FighterIntent(
                 new Float2(move.x, move.y),
-                FighterCommand.None,
-                false,
-                false,
+                command,
+                isCommandPressed,
+                isCommandHeld,
                 gait,
                 tick);
             return true;
@@ -93,6 +103,17 @@ namespace OctagonFighter.Infrastructure.Input
             _dodgeAction.AddBinding("<Keyboard>/leftShift");
             _dodgeAction.AddBinding("<Gamepad>/buttonEast");
             _dodgeAction.performed += OnDodgePerformed;
+
+            _lightPunchAction = new InputAction("LightPunch", InputActionType.Button);
+            _lightPunchAction.AddBinding("<Keyboard>/j");
+            _lightPunchAction.AddBinding("<Gamepad>/buttonWest");
+            _lightPunchAction.AddBinding("<Mouse>/leftButton");
+            _lightPunchAction.performed += OnLightPunchPerformed;
+
+            _heavyPunchAction = new InputAction("HeavyPunch", InputActionType.Button);
+            _heavyPunchAction.AddBinding("<Keyboard>/k");
+            _heavyPunchAction.AddBinding("<Gamepad>/buttonNorth");
+            _heavyPunchAction.performed += OnHeavyPunchPerformed;
         }
 
         private void OnEnable()
@@ -101,6 +122,8 @@ namespace OctagonFighter.Infrastructure.Input
             _runAction?.Enable();
             _blockAction?.Enable();
             _dodgeAction?.Enable();
+            _lightPunchAction?.Enable();
+            _heavyPunchAction?.Enable();
         }
 
         private void OnDisable()
@@ -109,7 +132,11 @@ namespace OctagonFighter.Infrastructure.Input
             _runAction?.Disable();
             _blockAction?.Disable();
             _dodgeAction?.Disable();
+            _lightPunchAction?.Disable();
+            _heavyPunchAction?.Disable();
             _dodgeQueued = false;
+            _lightPunchQueued = false;
+            _heavyPunchQueued = false;
         }
 
         private void OnDestroy()
@@ -119,6 +146,20 @@ namespace OctagonFighter.Infrastructure.Input
                 _dodgeAction.performed -= OnDodgePerformed;
                 _dodgeAction.Dispose();
                 _dodgeAction = null;
+            }
+
+            if (_lightPunchAction != null)
+            {
+                _lightPunchAction.performed -= OnLightPunchPerformed;
+                _lightPunchAction.Dispose();
+                _lightPunchAction = null;
+            }
+
+            if (_heavyPunchAction != null)
+            {
+                _heavyPunchAction.performed -= OnHeavyPunchPerformed;
+                _heavyPunchAction.Dispose();
+                _heavyPunchAction = null;
             }
 
             _moveAction?.Dispose();
@@ -134,6 +175,16 @@ namespace OctagonFighter.Infrastructure.Input
         private void OnDodgePerformed(InputAction.CallbackContext context)
         {
             _dodgeQueued = true;
+        }
+
+        private void OnLightPunchPerformed(InputAction.CallbackContext context)
+        {
+            _lightPunchQueued = true;
+        }
+
+        private void OnHeavyPunchPerformed(InputAction.CallbackContext context)
+        {
+            _heavyPunchQueued = true;
         }
     }
 }

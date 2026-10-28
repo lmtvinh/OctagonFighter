@@ -61,3 +61,31 @@ MonoBehaviour:
     _hitReactionDurationSeconds: 0.35
     _knockdownDurationSeconds: 1.5
     _recoveryDurationSeconds: 0.8
+  _attacks:
+    _light:
+      _displayName: Jab
+      _animationState: Jab
+      _startupSeconds: 0.36
+      _activeSeconds: 0.11
+      _recoverySeconds: 0.23
+      _cooldownSeconds: 0.35
+      _staminaCost: 6
+      _damage: 8
+      _range: 0.95
+      _radius: 0.06
+      _region: 0
+      _hand: 0
+    _heavy:
+      _displayName: Cross
+      _animationState: Cross
+      _startupSeconds: 0.6
+      _activeSeconds: 0.1
+      _recoverySeconds: 0.2
+      _cooldownSeconds: 0.75
+      _staminaCost: 12
+      _damage: 15
+      _range: 1.05
+      _radius: 0.07
+      _region: 0
+      _hand: 1
+    _inputBufferSeconds: 0.25

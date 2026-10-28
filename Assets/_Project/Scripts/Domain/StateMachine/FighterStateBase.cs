@@ -14,6 +14,9 @@ namespace OctagonFighter.Domain.StateMachine
         public MovementAuthority MovementAuthority { get; }
 
         /// <inheritdoc />
+        public FacingAuthority FacingAuthority { get; }
+
+        /// <inheritdoc />
         public FighterIntentMask AcceptedIntents { get; }
 
         /// <inheritdoc />
@@ -26,12 +29,14 @@ namespace OctagonFighter.Domain.StateMachine
             FighterStateId id,
             MovementAuthority movementAuthority,
             FighterIntentMask acceptedIntents,
-            int transitionPriority)
+            int transitionPriority,
+            FacingAuthority facingAuthority = FacingAuthority.Free)
         {
             Id = id;
             MovementAuthority = movementAuthority;
             AcceptedIntents = acceptedIntents;
             TransitionPriority = transitionPriority;
+            FacingAuthority = facingAuthority;
         }
 
         /// <inheritdoc />

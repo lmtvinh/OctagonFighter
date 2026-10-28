@@ -72,12 +72,22 @@ namespace OctagonFighter.Infrastructure.Movement
         /// <summary>
         /// Advances movement for one fixed tick.
         /// </summary>
+        /// <param name="move">Combat-relative movement input.</param>
+        /// <param name="gait">Requested gait.</param>
+        /// <param name="authority">Movement authority granted by the current state.</param>
+        /// <param name="allowFacing">
+        /// Whether the current state permits turning toward the nearest opponent. Committed strikes
+        /// pass <see langword="false"/> so a punch thrown off-line stays off-line instead of homing
+        /// onto the target during startup.
+        /// </param>
+        /// <param name="deltaSeconds">Fixed simulation step.</param>
         /// <exception cref="InvalidOperationException">Thrown when the motor has not been initialized.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the delta time is invalid.</exception>
         public void Tick(
             Float2 move,
             MovementGait gait,
             MovementAuthority authority,
+            bool allowFacing,
             float deltaSeconds)
         {
             if (!_isInitialized)
@@ -116,7 +126,7 @@ namespace OctagonFighter.Infrastructure.Movement
             // combat states bleed off residual speed in a predictable, short window.
             ApplyVelocityRamp(targetVelocity, deltaSeconds);
 
-            UpdateFacing(deltaSeconds);
+            UpdateFacing(deltaSeconds, allowFacing);
 
             UpdateVerticalVelocity(deltaSeconds);
 
@@ -148,11 +158,12 @@ namespace OctagonFighter.Infrastructure.Movement
         /// <summary>
         /// Keeps the fighter turned toward the nearest opponent. Because movement is combat-relative,
         /// the body is never rotated toward its own velocity: doing so would curve the movement into
-        /// a spiral. Without an opponent the current facing is kept.
+        /// a spiral. Without an opponent, or while a committed action owns facing, the current
+        /// facing is kept.
         /// </summary>
-        private void UpdateFacing(float deltaSeconds)
+        private void UpdateFacing(float deltaSeconds, bool allowFacing)
         {
-            if (!_faceNearestOpponent)
+            if (!allowFacing || !_faceNearestOpponent)
             {
                 return;
             }

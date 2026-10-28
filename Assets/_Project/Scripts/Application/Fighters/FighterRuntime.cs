@@ -68,6 +68,11 @@ namespace OctagonFighter.Application.Fighters
         public MovementAuthority CurrentMovementAuthority => _stateMachine.CurrentMovementAuthority;
 
         /// <summary>
+        /// Gets the facing authority of the current state.
+        /// </summary>
+        public FacingAuthority CurrentFacingAuthority => _stateMachine.CurrentFacingAuthority;
+
+        /// <summary>
         /// Occurs after a successful state transition.
         /// </summary>
         public event Action<FighterStateChangedEvent> StateChanged;
@@ -142,6 +147,8 @@ namespace OctagonFighter.Application.Fighters
             if (_stateMachine.CurrentStateId != FighterStateId.Defeated)
             {
                 _stamina.Tick(deltaSeconds);
+                _attacks.Tick(deltaSeconds);
+                BufferAttackIntent(intent);
 
                 FighterSnapshot beforeTick = CreateSnapshot(_stateMachine.CurrentStateId, tick);
                 FighterStateContext context = CreateContext(beforeTick);
@@ -150,6 +157,11 @@ namespace OctagonFighter.Application.Fighters
                 if (transition.HasValue)
                 {
                     RaiseStateChanged(transition.Value);
+                }
+
+                if (_attacks.TryTakeHitRequest(out AttackHitRequest hitRequest))
+                {
+                    HitRequested?.Invoke(hitRequest);
                 }
 
                 if (_health.IsKnockedOut)
@@ -190,6 +202,7 @@ namespace OctagonFighter.Application.Fighters
             _health.KnockedOut -= OnHealthKnockedOut;
             StateChanged = null;
             Defeated = null;
+            HitRequested = null;
             _disposed = true;
         }
 
@@ -230,6 +243,25 @@ namespace OctagonFighter.Application.Fighters
             Defeated?.Invoke(new FighterDefeatedEvent(_data.Id, tick));
         }
 
+        private void BufferAttackIntent(in FighterIntent intent)
+        {
+            if (!intent.IsCommandPressed)
+            {
+                return;
+            }
+
+            switch (intent.Command)
+            {
+                case FighterCommand.LightPunch:
+                    _attacks.BufferAttack(AttackSlot.Light);
+                    break;
+
+                case FighterCommand.HeavyPunch:
+                    _attacks.BufferAttack(AttackSlot.Heavy);
+                    break;
+            }
+        }
+
         private void RaiseStateChanged(StateTransition transition)
         {
             StateChanged?.Invoke(new FighterStateChangedEvent(
@@ -256,7 +288,7 @@ namespace OctagonFighter.Application.Fighters
 
         private FighterStateContext CreateContext(FighterSnapshot snapshot)
         {
-            return new FighterStateContext(_data, _health, _stamina, _clock, snapshot);
+            return new FighterStateContext(_data, _health, _stamina, _clock, _attacks, snapshot);
         }
 
         private void ThrowIfDisposed()

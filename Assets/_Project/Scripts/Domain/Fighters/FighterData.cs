@@ -89,5 +89,25 @@ namespace OctagonFighter.Domain.Fighters
             Movement = movement;
             Attacks = attacks;
         }
+
+        /// <summary>
+        /// Returns a copy of this data with a different fighter identifier.
+        /// </summary>
+        /// <remarks>
+        /// Used when several scene instances share one authored definition but must have
+        /// unique runtime identities for targeting and damage routing.
+        /// </remarks>
+        public FighterData WithId(FighterId id)
+        {
+            return new FighterData(
+                id,
+                DisplayName,
+                Attributes,
+                Body,
+                Health,
+                Stamina,
+                Movement,
+                Attacks);
+        }
     }
 }

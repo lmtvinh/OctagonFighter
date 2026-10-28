@@ -34,6 +34,9 @@ namespace OctagonFighter.Data.Fighters
         [Header("Movement")]
         [SerializeField] private MovementProfileAuthoring _movement = MovementProfileAuthoring.CreateDefault();
 
+        [Header("Attacks")]
+        [SerializeField] private AttackBookAuthoring _attacks = AttackBookAuthoring.CreateDefault();
+
         /// <summary>
         /// Gets the stable authored fighter identifier.
         /// </summary>
@@ -65,7 +68,8 @@ namespace OctagonFighter.Data.Fighters
                     _body.ToDomain(),
                     _health.ToDomain(),
                     _stamina.ToDomain(),
-                    _movement.ToDomain());
+                    _movement.ToDomain(),
+                    _attacks.ToDomain());
             }
             catch (Exception exception) when (
                 exception is ArgumentException ||
@@ -117,6 +121,11 @@ namespace OctagonFighter.Data.Fighters
             if (!_movement.TryValidate(out string movementError))
             {
                 errors.Append(movementError).Append(' ');
+            }
+
+            if (!_attacks.TryValidate(out string attackError))
+            {
+                errors.Append(attackError).Append(' ');
             }
 
             error = errors.ToString().Trim();

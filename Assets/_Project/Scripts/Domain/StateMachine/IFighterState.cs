@@ -18,6 +18,11 @@ namespace OctagonFighter.Domain.StateMachine
         MovementAuthority MovementAuthority { get; }
 
         /// <summary>
+        /// Gets the facing authority granted by this state.
+        /// </summary>
+        FacingAuthority FacingAuthority { get; }
+
+        /// <summary>
         /// Gets the intent channels accepted by this state.
         /// </summary>
         FighterIntentMask AcceptedIntents { get; }

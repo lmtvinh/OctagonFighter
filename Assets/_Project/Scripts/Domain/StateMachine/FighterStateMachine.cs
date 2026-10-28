@@ -37,6 +37,12 @@ namespace OctagonFighter.Domain.StateMachine
             _currentState != null ? _currentState.MovementAuthority : MovementAuthority.None;
 
         /// <summary>
+        /// Gets the facing authority granted by the current state.
+        /// </summary>
+        public FacingAuthority CurrentFacingAuthority =>
+            _currentState != null ? _currentState.FacingAuthority : FacingAuthority.Free;
+
+        /// <summary>
         /// Registers a state with the machine.
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="state"/> is null.</exception>

@@ -3,6 +3,7 @@ using OctagonFighter.Application.Fighters;
 using OctagonFighter.Core.Ids;
 using OctagonFighter.Core.Math;
 using OctagonFighter.Core.Time;
+using OctagonFighter.Domain.Combat;
 using OctagonFighter.Domain.Fighters;
 using OctagonFighter.Domain.Health;
 using OctagonFighter.Domain.Stamina;
@@ -40,7 +41,13 @@ namespace OctagonFighter.Tests.EditMode
                 health.IsKnockedOut,
                 clock.CurrentTick);
 
-            _context = new FighterStateContext(_data, health, stamina, clock, snapshot);
+            _context = new FighterStateContext(
+                _data,
+                health,
+                stamina,
+                clock,
+                new AttackTracker(_data.Attacks),
+                snapshot);
             _stateMachine = FoundationStateMachineFactory.Create();
             _stateMachine.Initialize(FighterStateId.Idle, _context, FighterIntent.None);
         }
@@ -151,7 +158,8 @@ namespace OctagonFighter.Tests.EditMode
                 new BodyProfile(1.8f, 1.8f, "Lightweight", FighterStance.Orthodox),
                 new HealthProfile(100f, 100f, 100f, 80f),
                 stamina,
-                new MovementProfile(2.6f, 2.1f, 2.3f, 0.25f, 0.4f, 0.35f, 1.5f, 0.8f, 0.55f, 720f));
+                new MovementProfile(2.6f, 2.1f, 2.3f, 0.25f, 0.4f, 0.35f, 1.5f, 0.8f, 0.55f, 720f),
+                AttackBook.CreateDefault());
         }
     }
 }

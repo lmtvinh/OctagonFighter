@@ -77,22 +77,23 @@ namespace OctagonFighter.Domain.Combat
         /// Creates the default MVP strike set.
         /// </summary>
         /// <remarks>
-        /// Timings are measured from the imported clips at 30 fps:
-        /// <c>Lead Jab.fbx</c> (1.500 s) reaches 90% of its extension between 0.375 s and 0.442 s
-        /// with a peak at 0.404 s, and <c>Jab Cross.fbx</c> (2.233 s) reaches 90% of the right hand's
-        /// extension between 0.613 s and 0.675 s with a peak at 0.638 s. The contact windows below
-        /// bracket those intervals and the recovery covers the hand's return to guard. The clips
-        /// carry a long idle tail, so the strike states end after the useful motion instead of
-        /// playing the whole file.
+        /// Timings are measured from the imported clips at their authored frame rate:
+        /// <c>Boxing_mixamo.fbx</c> frames 50-64 (24 fps, 0.583 s) is the lead jab, whose left hand
+        /// reaches 0.523 m forward at 0.317 s; <c>Jab Cross.fbx</c> (2.233 s, 30 fps) reaches its
+        /// right-hand peak at 0.638 s. Both windows bracket the measured extension plateau rather
+        /// than only its onset: Play Mode sampling showed the presented fist still extending until
+        /// ~0.73 s on the cross, so the old 0.60-0.70 s window closed before the hand's deepest
+        /// sample. The recovery covers the hand's return to guard, and the clips' long idle tails
+        /// are cut off by ending the state after the useful motion.
         /// </remarks>
         public static AttackBook CreateDefault()
         {
             var light = new AttackDefinition(
                 "Jab",
                 "Jab",
-                0.36f,
-                0.11f,
-                0.23f,
+                0.26f,
+                0.16f,
+                0.16f,
                 0.35f,
                 6f,
                 8f,
@@ -105,8 +106,8 @@ namespace OctagonFighter.Domain.Combat
                 "Cross",
                 "Cross",
                 0.60f,
-                0.10f,
-                0.20f,
+                0.18f,
+                0.14f,
                 0.75f,
                 12f,
                 15f,

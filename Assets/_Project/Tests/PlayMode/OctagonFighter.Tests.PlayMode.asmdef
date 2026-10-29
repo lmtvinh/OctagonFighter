@@ -1,0 +1,27 @@
+{
+    "name": "OctagonFighter.Tests.PlayMode",
+    "rootNamespace": "OctagonFighter.Tests.PlayMode",
+    "references": [
+        "OctagonFighter.Core",
+        "OctagonFighter.Domain",
+        "OctagonFighter.Application",
+        "OctagonFighter.Data",
+        "OctagonFighter.Infrastructure",
+        "OctagonFighter.Presentation",
+        "Unity.InputSystem",
+        "UnityEngine.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

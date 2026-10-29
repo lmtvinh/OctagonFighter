@@ -19,10 +19,11 @@ namespace OctagonFighter.Tests.EditMode
     {
         private const float TickSeconds = 1f / 60f;
 
-        // Measured from the imported 30 fps clips with a 240 Hz hand sampling pass:
-        // Lead Jab.fbx reaches 90% of the left hand's extension between 0.375 s and 0.442 s.
-        private const float MeasuredJabReachStart = 0.375f;
-        private const float MeasuredJabReachEnd = 0.442f;
+        // Measured from the imported clips with a 240 Hz hand sampling pass:
+        // the Boxing_mixamo "Jab" sub-clip (frames 50-64, 24 fps) reaches 90% of the left
+        // hand's forward extension between 0.268 s and 0.385 s (peak 0.523 m at 0.318 s).
+        private const float MeasuredJabReachStart = 0.268f;
+        private const float MeasuredJabReachEnd = 0.385f;
 
         // Jab Cross.fbx reaches 90% of the right hand's extension between 0.613 s and 0.675 s.
         private const float MeasuredCrossReachStart = 0.613f;
@@ -68,17 +69,16 @@ namespace OctagonFighter.Tests.EditMode
         [Test]
         public void LightPunchDoesNotRequestAHitBeforeStartupCompletes()
         {
+            AttackDefinition jab = _attacks.Book.Light;
+
             Tick(FighterCommand.LightPunch, true, 0.01f);
 
-            Tick(FighterCommand.None, false, 0.3f);
+            // The entry tick starts the attack timeline at zero. Stop half a simulation tick short
+            // of the contact window so floating-point rounding cannot open it early.
+            Tick(FighterCommand.None, false, jab.ContactStartSeconds - (TickSeconds * 0.5f));
             Assert.IsFalse(_attacks.TryTakeHitRequest(out _), "Damage must not resolve during startup.");
 
-            Tick(FighterCommand.None, false, 0.05f);
-            Assert.IsFalse(
-                _attacks.TryTakeHitRequest(out _),
-                "The contact window must not open before the measured extension begins.");
-
-            Tick(FighterCommand.None, false, 0.02f);
+            Tick(FighterCommand.None, false, TickSeconds);
             Assert.IsTrue(_attacks.TryTakeHitRequest(out AttackHitRequest request));
             Assert.AreEqual(_data.Id, request.AttackerId);
             Assert.AreEqual(AttackSlot.Light, request.Slot);

@@ -677,6 +677,18 @@ namespace OctagonFighter.Editor
             characterController.stepOffset = 0.3f;
             characterController.slopeLimit = 45f;
 
+            // Combat queries read this trigger volume instead of the CharacterController, whose
+            // collision shell is inset from the authored body capsule.
+            var hitbox = new GameObject("Hitbox");
+            hitbox.layer = root.layer;
+            hitbox.transform.SetParent(root.transform, false);
+            var hitboxCollider = hitbox.AddComponent<CapsuleCollider>();
+            hitboxCollider.center = new Vector3(0f, 0.9f, 0f);
+            hitboxCollider.height = 1.8f;
+            hitboxCollider.radius = 0.3f;
+            hitboxCollider.direction = 1;
+            hitboxCollider.isTrigger = true;
+
             root.AddComponent<HealthComponent>();
             root.AddComponent<StaminaComponent>();
             var identity = root.AddComponent<FighterIdentity>();

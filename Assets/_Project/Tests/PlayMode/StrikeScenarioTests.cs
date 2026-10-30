@@ -82,10 +82,13 @@ namespace OctagonFighter.Tests.PlayMode
 
             Assert.AreEqual(1, DamageEvents.Count, "A close jab must damage the opponent exactly once.");
             Assert.AreEqual(8, DamageEvents[0].Amount, "A jab must apply its authored 8 damage.");
+            // Authored jab window: 0.26-0.42 s (FD_Boxer: startup 0.26 s, active 0.16 s). The
+            // delay is measured from the first sampled attack frame, so allow one 60 Hz frame of
+            // quantization on either side.
             Assert.That(
                 DamageEvents[0].Delay,
-                Is.InRange(0.24f, 0.46f),
-                "Jab damage must land in the authored contact window (0.28-0.42 s).");
+                Is.InRange(0.24f, 0.44f),
+                "Jab damage must land in the authored contact window (0.26-0.42 s).");
             Assert.Less(MaxAttackFacingDelta(), 0.5f, "The attacker must not turn during the jab.");
             Assert.Less(MinFistGap(), 0.08f, "The fist must actually reach the opponent's capsule.");
         }
@@ -106,10 +109,13 @@ namespace OctagonFighter.Tests.PlayMode
 
             Assert.AreEqual(1, DamageEvents.Count, "A close cross must damage the opponent exactly once.");
             Assert.AreEqual(15, DamageEvents[0].Amount, "A cross must apply its authored 15 damage.");
+            // Authored cross window: 0.60-0.78 s (FD_Boxer: startup 0.60 s, active 0.18 s). The
+            // delay is measured from the first sampled attack frame, so allow one 60 Hz frame of
+            // quantization on either side.
             Assert.That(
                 DamageEvents[0].Delay,
-                Is.InRange(0.60f, 0.85f),
-                "Cross damage must land in the authored contact window (0.66-0.78 s).");
+                Is.InRange(0.58f, 0.80f),
+                "Cross damage must land in the authored contact window (0.60-0.78 s).");
             Assert.Less(MaxAttackFacingDelta(), 0.5f, "The attacker must not turn during the cross.");
             Assert.Less(MinFistGap(), 0.09f, "The fist must actually reach the opponent's capsule.");
         }

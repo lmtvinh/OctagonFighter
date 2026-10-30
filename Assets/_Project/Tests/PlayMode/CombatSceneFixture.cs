@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using OctagonFighter.Domain.Combat;
 using OctagonFighter.Domain.StateMachine;
@@ -24,9 +25,15 @@ namespace OctagonFighter.Tests.PlayMode
     /// <remarks>
     /// The rig repositions the two shipped fighters at runtime instead of editing the scene, so the
     /// committed scene stays untouched. Frames are rendered into a RenderTexture because
-    /// <see cref="ScreenCapture"/> does not write files in batch mode. All scenario timing is
-    /// wall-clock based so the sampling does not drift away from the fixed simulation clock when
-    /// the batch player renders faster than real time.
+    /// <see cref="ScreenCapture"/> does not write files in batch mode.
+    /// </remarks>
+    /// <remarks>
+    /// Timing is driven by a fixed capture clock (<see cref="Time.captureDeltaTime"/>), so each
+    /// rendered frame advances the simulation by exactly one <see cref="TickSeconds"/> step no
+    /// matter how long the frame took in wall-clock time. Without this, a PNG readback/encode stall
+    /// (0.2-0.3 s in batch mode) would make <see cref="Time.time"/> jump, skipping contact windows
+    /// and shifting damage timestamps. PNG files are encoded on the frame but written to disk on
+    /// background tasks after the measurement, so file I/O never runs on the simulation path.
     /// </remarks>
     public abstract class CombatSceneFixture
     {
@@ -49,8 +56,10 @@ namespace OctagonFighter.Tests.PlayMode
         private InputSettings.BackgroundBehavior _previousBackgroundBehavior;
         private InputSettings.EditorInputBehaviorInPlayMode _previousEditorInputBehavior;
         private float _previousFixedDeltaTime;
+        private float _previousCaptureDeltaTime;
         private readonly StringBuilder _csv = new StringBuilder();
         private readonly List<(float Delay, int Amount)> _damageEvents = new List<(float, int)>();
+        private readonly List<Task> _pendingShotWrites = new List<Task>();
         private int _shotIndex;
         private float _nextShotTime;
         private string _scenario;
@@ -58,7 +67,11 @@ namespace OctagonFighter.Tests.PlayMode
         private float _health;
         private FighterStateId _previousState;
 
-        /// <summary>Gets the wall-clock seconds elapsed since the current scenario started.</summary>
+        /// <summary>
+        /// Gets the simulation seconds elapsed since the current scenario started. With the fixed
+        /// capture clock active this advances by exactly one tick per rendered frame, so it is not
+        /// affected by wall-clock stalls (PNG readback, GC, disk).
+        /// </summary>
         protected float Elapsed => _scenarioStart < 0f ? 0f : Time.time - _scenarioStart;
 
         /// <summary>Gets the health drops observed in the current scenario, with their delay from the last attack start.</summary>
@@ -81,7 +94,9 @@ namespace OctagonFighter.Tests.PlayMode
         public IEnumerator LoadCombatScene()
         {
             _previousFixedDeltaTime = Time.fixedDeltaTime;
+            _previousCaptureDeltaTime = Time.captureDeltaTime;
             Time.fixedDeltaTime = TickSeconds;
+            Time.captureDeltaTime = TickSeconds;
             Time.timeScale = 1f;
 
             // A batch-mode player is never focused, so the input system disables its devices and
@@ -197,6 +212,8 @@ namespace OctagonFighter.Tests.PlayMode
                 _sceneCamera.enabled = true;
             }
 
+            FlushShotWrites();
+            Time.captureDeltaTime = _previousCaptureDeltaTime;
             Time.fixedDeltaTime = _previousFixedDeltaTime;
             InputSystem.settings.backgroundBehavior = _previousBackgroundBehavior;
             InputSystem.settings.editorInputBehaviorInPlayMode = _previousEditorInputBehavior;
@@ -255,6 +272,12 @@ namespace OctagonFighter.Tests.PlayMode
 
             string path = Path.Combine(ShotDirectory, _scenario + ".csv");
             File.WriteAllText(path, _csv.ToString());
+
+            // Measurement is over, so it is safe to block here until every frame captured during
+            // the scenario has reached disk. Assertions run after EndScenario, which means the
+            // diagnostic images for a failing scenario are guaranteed to exist.
+            FlushShotWrites();
+
             Debug.Log($"[P41] scenario '{_scenario}' log -> {path} ({_csv.Length} chars)");
             _scenarioStart = -1f;
         }
@@ -301,7 +324,7 @@ namespace OctagonFighter.Tests.PlayMode
                 float delta = Time.deltaTime;
                 perFrame?.Invoke(delta);
                 Record();
-                if (capture && Elapsed >= _nextShotTime)
+                if (capture && Elapsed <= captureWindow.y && Elapsed >= _nextShotTime)
                 {
                     _nextShotTime += captureInterval;
                     Capture();
@@ -324,7 +347,7 @@ namespace OctagonFighter.Tests.PlayMode
             {
                 yield return null;
                 Record();
-                if (capture && Elapsed >= _nextShotTime)
+                if (capture && Elapsed <= captureWindow.y && Elapsed >= _nextShotTime)
                 {
                     _nextShotTime += captureInterval;
                     Capture();
@@ -465,14 +488,35 @@ namespace OctagonFighter.Tests.PlayMode
 
         private void Capture()
         {
+            // Readback and encoding must happen on the rendered frame, but they are pure image
+            // work: no file system calls run on the simulation path. The encoded PNG bytes are
+            // owned by the queued task, so the buffer stays valid until the write completes.
             RenderTexture.active = _texture;
             _image.ReadPixels(new Rect(0, 0, _texture.width, _texture.height), 0, 0);
             _image.Apply();
             RenderTexture.active = null;
 
             string name = $"{_scenario}_{_shotIndex:000}_{Elapsed:0.00}s.png";
-            File.WriteAllBytes(Path.Combine(ShotDirectory, name), _image.EncodeToPNG());
+            string path = Path.Combine(ShotDirectory, name);
+            byte[] png = _image.EncodeToPNG();
             _shotIndex++;
+            _pendingShotWrites.Add(Task.Run(() => File.WriteAllBytes(path, png)));
+        }
+
+        /// <summary>
+        /// Waits for every queued PNG write to finish. Called after measurement (scenario end) and
+        /// during teardown, never inside the sampling loop.
+        /// </summary>
+        private void FlushShotWrites()
+        {
+            if (_pendingShotWrites.Count == 0)
+            {
+                return;
+            }
+
+            Task[] pending = _pendingShotWrites.ToArray();
+            _pendingShotWrites.Clear();
+            Task.WaitAll(pending);
         }
 
         private static bool IsAttackState(FighterStateId state)

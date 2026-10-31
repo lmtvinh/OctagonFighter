@@ -113,7 +113,7 @@ namespace OctagonFighter.Domain.Combat
                 15f,
                 1.05f,
                 0.07f,
-                HitRegion.Head,
+                HitRegion.Body,
                 StrikeHand.Right);
 
             return new AttackBook(light, heavy, 0.25f);

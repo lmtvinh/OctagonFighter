@@ -98,6 +98,16 @@ namespace OctagonFighter.Infrastructure.Health
         public event Action<FighterKnockedOutEvent> KnockedOut;
 
         /// <summary>
+        /// Occurs when an impact hit actually removes health, carrying the resolved damage so
+        /// listeners know the attacker, the region, and the tick.
+        /// </summary>
+        /// <remarks>
+        /// Zero-damage or already-defeated applications do not raise this event, which is what keeps
+        /// a missed strike from ever starting a hit reaction.
+        /// </remarks>
+        public event Action<DamageEvent> Damaged;
+
+        /// <summary>
         /// Creates the domain model from validated profile data.
         /// </summary>
         /// <exception cref="InvalidOperationException">Thrown when the component is already initialized.</exception>
@@ -118,7 +128,14 @@ namespace OctagonFighter.Infrastructure.Health
         public DamageResult ApplyDamage(in DamageEvent damage)
         {
             EnsureInitialized();
-            return _model.ApplyDamage(damage);
+            DamageResult result = _model.ApplyDamage(damage);
+
+            if (result.AppliedAmount > 0f && damage.Type == DamageType.Impact)
+            {
+                Damaged?.Invoke(damage);
+            }
+
+            return result;
         }
 
         private void OnDestroy()

@@ -136,6 +136,47 @@ namespace OctagonFighter.Domain.StateMachine
         }
 
         /// <summary>
+        /// Looks up a registered state by identifier and type.
+        /// </summary>
+        /// <remarks>
+        /// Used by authoritative interrupt paths that need to hand a payload (such as the damaged
+        /// body region) to the state before it is entered. The machine still owns every transition.
+        /// </remarks>
+        public bool TryGetState<TState>(FighterStateId stateId, out TState state)
+            where TState : class, IFighterState
+        {
+            if (_states.TryGetValue(stateId, out IFighterState registered) && registered is TState typed)
+            {
+                state = typed;
+                return true;
+            }
+
+            state = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Re-enters the current state so its timer and payload restart without leaving the state.
+        /// </summary>
+        /// <remarks>
+        /// Used when a second confirmed hit lands while a reaction is already running: the reaction
+        /// is refreshed instead of stacked, so one hit can never create two simultaneous reactions.
+        /// </remarks>
+        public bool RestartCurrentState(in FighterStateContext context, in FighterIntent intent)
+        {
+            EnsureInitialized();
+
+            if (_currentState.Id == FighterStateId.Defeated)
+            {
+                return false;
+            }
+
+            _timeInState = 0f;
+            _currentState.Enter(context, intent.Filter(_currentState.AcceptedIntents));
+            return true;
+        }
+
+        /// <summary>
         /// Forces a transition regardless of the current state's transition rules.
         /// </summary>
         /// <remarks>

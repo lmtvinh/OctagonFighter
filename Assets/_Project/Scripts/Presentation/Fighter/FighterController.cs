@@ -76,6 +76,18 @@ namespace OctagonFighter.Presentation.Fighter
         public FighterSnapshot Snapshot => _runtime != null ? _runtime.Snapshot : default;
 
         /// <summary>
+        /// Gets the confirmed hit reaction the fighter is currently presenting, or a default value
+        /// when the fighter is not reacting.
+        /// </summary>
+        public HitReactionInfo ActiveHitReaction =>
+            _runtime != null ? _runtime.ActiveHitReaction : default;
+
+        /// <summary>
+        /// Gets a value indicating whether the fighter is currently held in hit stun.
+        /// </summary>
+        public bool IsReactingToHit => _runtime != null && _runtime.IsReactingToHit;
+
+        /// <summary>
         /// Gets the damage receiver for this fighter.
         /// </summary>
         public IDamageable Damageable => _healthComponent;
@@ -222,6 +234,8 @@ namespace OctagonFighter.Presentation.Fighter
             _runtime.StateChanged += OnRuntimeStateChanged;
             _runtime.Defeated += OnRuntimeDefeated;
             _runtime.HitRequested += OnRuntimeHitRequested;
+            _runtime.HitReactionStarted += OnRuntimeHitReactionStarted;
+            _healthComponent.Damaged += OnDamaged;
             _isInitialized = true;
 
             Spawned?.Invoke(new FighterSpawnedEvent(data.Id, _clock.CurrentTick));
@@ -330,6 +344,8 @@ namespace OctagonFighter.Presentation.Fighter
             _runtime.StateChanged -= OnRuntimeStateChanged;
             _runtime.Defeated -= OnRuntimeDefeated;
             _runtime.HitRequested -= OnRuntimeHitRequested;
+            _runtime.HitReactionStarted -= OnRuntimeHitReactionStarted;
+            _healthComponent.Damaged -= OnDamaged;
             _runtime.Dispose();
             _runtime = null;
             _hitRegistry.Clear();
@@ -387,6 +403,24 @@ namespace OctagonFighter.Presentation.Fighter
         private void OnRuntimeDefeated(FighterDefeatedEvent defeatedEvent)
         {
             Defeated?.Invoke(defeatedEvent);
+        }
+
+        /// <summary>
+        /// Turns a confirmed impact hit into a reaction on this fighter.
+        /// </summary>
+        /// <remarks>
+        /// The health adapter raises this only after damage was actually applied, so the reaction is
+        /// tied to the same event that removed health. This is also why a missed strike, which never
+        /// reaches the health adapter, cannot start a reaction.
+        /// </remarks>
+        private void OnDamaged(DamageEvent damage)
+        {
+            _runtime?.ReactToHit(damage.Region, damage.Tick);
+        }
+
+        private void OnRuntimeHitReactionStarted(HitReactionInfo reaction)
+        {
+            _view?.PlayHitReaction(reaction.Region);
         }
 
         private void OnRuntimeHitRequested(AttackHitRequest request)

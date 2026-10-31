@@ -7,6 +7,7 @@ using OctagonFighter.Domain.Fighters;
 using OctagonFighter.Domain.Health;
 using OctagonFighter.Domain.Stamina;
 using OctagonFighter.Domain.StateMachine;
+using OctagonFighter.Domain.StateMachine.States;
 
 namespace OctagonFighter.Application.Fighters
 {
@@ -73,6 +74,17 @@ namespace OctagonFighter.Application.Fighters
         public FacingAuthority CurrentFacingAuthority => _stateMachine.CurrentFacingAuthority;
 
         /// <summary>
+        /// Gets the reaction that is currently being presented, or a default value when the fighter
+        /// is not reacting.
+        /// </summary>
+        public HitReactionInfo ActiveHitReaction { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether the fighter is in a hit reaction.
+        /// </summary>
+        public bool IsReactingToHit => _stateMachine.CurrentStateId == FighterStateId.HitReaction;
+
+        /// <summary>
         /// Occurs after a successful state transition.
         /// </summary>
         public event Action<FighterStateChangedEvent> StateChanged;
@@ -86,6 +98,11 @@ namespace OctagonFighter.Application.Fighters
         /// Occurs when an active strike frame requests hit resolution.
         /// </summary>
         public event Action<AttackHitRequest> HitRequested;
+
+        /// <summary>
+        /// Occurs once for every confirmed hit that starts (or refreshes) a hit reaction.
+        /// </summary>
+        public event Action<HitReactionInfo> HitReactionStarted;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FighterRuntime"/> class.
@@ -171,6 +188,14 @@ namespace OctagonFighter.Application.Fighters
             }
 
             _snapshot = CreateSnapshot(_stateMachine.CurrentStateId, tick);
+
+            // The reaction payload lives exactly as long as the reaction state, so observers never
+            // read a stale region after control has been handed back.
+            if (_stateMachine.CurrentStateId != FighterStateId.HitReaction)
+            {
+                ActiveHitReaction = default;
+            }
+
             AnnounceDefeat(tick);
         }
 
@@ -183,12 +208,87 @@ namespace OctagonFighter.Application.Fighters
             ThrowIfDisposed();
 
             DamageResult result = _health.ApplyDamage(damage);
+
             if (_health.IsKnockedOut)
             {
-                _pendingDefeat = true;
+                // Defeat is decided before any reaction, so a killing blow enters the terminal
+                // Defeat state instead of a normal reaction.
+                ForceDefeat(damage.Tick);
+            }
+            else if (result.AppliedAmount > 0f && damage.Type == DamageType.Impact)
+            {
+                // Damage applied through the runtime follows the same rule as damage applied through
+                // the Unity health adapter: only a hit that actually removed health reacts.
+                ReactToHit(damage.Region, damage.Tick);
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Starts or refreshes the hit reaction for a confirmed hit.
+        /// </summary>
+        /// <remarks>
+        /// This is the single authoritative interrupt path for reactions. It is called only after a
+        /// hit has been confirmed and applied, so a missed strike can never reach it. A hit that
+        /// lands during an existing reaction refreshes that reaction instead of stacking a second
+        /// one, and a defeated fighter ignores reactions because defeat is terminal.
+        /// </remarks>
+        /// <param name="region">Body region that received the hit.</param>
+        /// <param name="tick">Tick in which the hit was resolved.</param>
+        /// <returns><see langword="true"/> when a reaction was started or refreshed.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the runtime has been disposed.</exception>
+        public bool ReactToHit(HitRegion region, TickId tick)
+        {
+            ThrowIfDisposed();
+
+            if (_stateMachine.CurrentStateId == FighterStateId.Defeated)
+            {
+                return false;
+            }
+
+            // A killing blow must never start a normal reaction, even temporarily. The Unity health
+            // adapter raises KnockedOut and then Damaged before the next Tick, so this guard also
+            // covers that path: damage is applied, defeat is decided, and only a surviving fighter
+            // reacts.
+            if (_health.IsKnockedOut || _pendingDefeat)
+            {
+                ForceDefeat(tick);
+                return false;
+            }
+
+            if (!_stateMachine.TryGetState(FighterStateId.HitReaction, out HitReactionState reaction))
+            {
+                return false;
+            }
+
+            reaction.Prepare(region);
+
+            FighterSnapshot snapshot = CreateSnapshot(_stateMachine.CurrentStateId, _clock.CurrentTick);
+            FighterStateContext context = CreateContext(snapshot);
+            var info = new HitReactionInfo(region, tick);
+
+            if (_stateMachine.CurrentStateId == FighterStateId.HitReaction)
+            {
+                if (!_stateMachine.RestartCurrentState(context, FighterIntent.None))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                FighterStateId previousState = _stateMachine.CurrentStateId;
+                if (!_stateMachine.ForceTransition(FighterStateId.HitReaction, context, FighterIntent.None))
+                {
+                    return false;
+                }
+
+                RaiseStateChanged(new StateTransition(previousState, FighterStateId.HitReaction, tick));
+            }
+
+            ActiveHitReaction = info;
+            HitReactionStarted?.Invoke(info);
+            return true;
         }
 
         /// <inheritdoc />
@@ -203,6 +303,7 @@ namespace OctagonFighter.Application.Fighters
             StateChanged = null;
             Defeated = null;
             HitRequested = null;
+            HitReactionStarted = null;
             _disposed = true;
         }
 
@@ -230,6 +331,10 @@ namespace OctagonFighter.Application.Fighters
             }
 
             RaiseStateChanged(new StateTransition(previousState, FighterStateId.Defeated, tick));
+
+            // Defeat ends any running reaction immediately; do not leave a stale payload for
+            // observers between this transition and the next Tick.
+            ActiveHitReaction = default;
         }
 
         private void AnnounceDefeat(TickId tick)

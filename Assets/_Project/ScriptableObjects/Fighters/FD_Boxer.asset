@@ -86,6 +86,6 @@ MonoBehaviour:
       _damage: 15
       _range: 1.05
       _radius: 0.07
-      _region: 0
+      _region: 1
       _hand: 1
     _inputBufferSeconds: 0.25

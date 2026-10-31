@@ -1,4 +1,5 @@
 using OctagonFighter.Domain.Fighters;
+using OctagonFighter.Domain.Health;
 using OctagonFighter.Domain.StateMachine;
 using UnityEngine;
 
@@ -22,6 +23,8 @@ namespace OctagonFighter.Presentation.Fighter
         private static readonly int LocomotionState = Animator.StringToHash("Locomotion");
         private static readonly int JabState = Animator.StringToHash("Jab");
         private static readonly int CrossState = Animator.StringToHash("Cross");
+        private static readonly int HitReactionHeadState = Animator.StringToHash("HitReactionHead");
+        private static readonly int HitReactionBodyState = Animator.StringToHash("HitReactionBody");
 
         private const float AttackFadeSeconds = 0.05f;
         private const float ReturnFadeSeconds = 0.1f;
@@ -41,6 +44,8 @@ namespace OctagonFighter.Presentation.Fighter
         private bool _hasLocomotionState;
         private bool _hasJabState;
         private bool _hasCrossState;
+        private bool _hasHitReactionHeadState;
+        private bool _hasHitReactionBodyState;
         private int _lastState = -1;
 
         /// <summary>
@@ -65,6 +70,8 @@ namespace OctagonFighter.Presentation.Fighter
             _hasLocomotionState = _animator.HasState(0, LocomotionState);
             _hasJabState = _animator.HasState(0, JabState);
             _hasCrossState = _animator.HasState(0, CrossState);
+            _hasHitReactionHeadState = _animator.HasState(0, HitReactionHeadState);
+            _hasHitReactionBodyState = _animator.HasState(0, HitReactionBodyState);
 
             foreach (AnimatorControllerParameter parameter in _animator.parameters)
             {
@@ -199,18 +206,53 @@ namespace OctagonFighter.Presentation.Fighter
                 {
                     EnterAttackState(CrossParameter, CrossState, _hasCross, _hasCrossState);
                 }
-                else if (IsAttackState((FighterStateId)_lastState) &&
+                else if (IsCommittedVisualState((FighterStateId)_lastState) &&
                          snapshot.State != FighterStateId.Defeated &&
                          _hasLocomotionState)
                 {
-                    // The view is the only authority that returns a finished strike to locomotion.
-                    // Attack states deliberately have no exit-time transition in the controller, so
-                    // the return happens exactly on the tick the strike state ends.
-                    _animator.CrossFade(LocomotionState, ReturnFadeSeconds, 0);
+                    // The view is the only authority that returns a finished strike or reaction to
+                    // locomotion. Attack and reaction states deliberately have no exit-time
+                    // transition in the controller, so the return happens exactly on the tick the
+                    // simulation state ends. Fixed-time keeps the fade at a constant wall duration
+                    // instead of scaling it by the finished state's clip length.
+                    _animator.CrossFadeInFixedTime(LocomotionState, ReturnFadeSeconds, 0);
                 }
 
                 _lastState = (int)snapshot.State;
             }
+        }
+
+        /// <summary>
+        /// Presents the reaction for a confirmed hit.
+        /// </summary>
+        /// <remarks>
+        /// Called from the runtime's <c>HitReactionStarted</c> event, so the clip starts on the same
+        /// event that applied damage. The simulation state owns the reaction duration; the animator
+        /// only presents it and is cross-faded back to locomotion when the state ends.
+        /// </remarks>
+        /// <param name="region">Body region that received the hit.</param>
+        public void PlayHitReaction(HitRegion region)
+        {
+            if (_animator == null)
+            {
+                return;
+            }
+
+            bool hasState = region == HitRegion.Body
+                ? _hasHitReactionBodyState
+                : _hasHitReactionHeadState;
+
+            if (!hasState)
+            {
+                return;
+            }
+
+            int stateHash = region == HitRegion.Body ? HitReactionBodyState : HitReactionHeadState;
+
+            // Fixed-time fade: CrossFade's duration is normalized to the source state's length,
+            // and the locomotion blend tree is tens of seconds long, so a normalized fade would
+            // outlast the whole reaction and the state would never be reached.
+            _animator.CrossFadeInFixedTime(stateHash, AttackFadeSeconds, 0);
         }
 
         /// <summary>
@@ -229,7 +271,7 @@ namespace OctagonFighter.Presentation.Fighter
             }
             else if (hasState)
             {
-                _animator.CrossFade(stateHash, AttackFadeSeconds, 0);
+                _animator.CrossFadeInFixedTime(stateHash, AttackFadeSeconds, 0);
             }
         }
 
@@ -242,10 +284,11 @@ namespace OctagonFighter.Presentation.Fighter
                    state == FighterStateId.Dodging;
         }
 
-        private static bool IsAttackState(FighterStateId state)
+        private static bool IsCommittedVisualState(FighterStateId state)
         {
             return state == FighterStateId.LightPunch ||
-                   state == FighterStateId.HeavyPunch;
+                   state == FighterStateId.HeavyPunch ||
+                   state == FighterStateId.HitReaction;
         }
     }
 }

@@ -97,6 +97,11 @@ namespace OctagonFighter.Data.Fighters
         /// <summary>
         /// Creates the default heavy strike (cross).
         /// </summary>
+        /// <remarks>
+        /// The shipped heavy strike is a body cross. Authoring it as a body hit is what makes head
+        /// and body reactions reachable with the two strikes the boxer owns; the light jab stays a
+        /// head strike.
+        /// </remarks>
         public static AttackDefinitionAuthoring CreateHeavyDefault()
         {
             return new AttackDefinitionAuthoring(
@@ -110,7 +115,7 @@ namespace OctagonFighter.Data.Fighters
                 15f,
                 1.05f,
                 0.07f,
-                HitRegion.Head,
+                HitRegion.Body,
                 StrikeHand.Right);
         }
 

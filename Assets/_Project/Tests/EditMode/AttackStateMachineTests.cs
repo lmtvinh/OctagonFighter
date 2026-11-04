@@ -25,9 +25,10 @@ namespace OctagonFighter.Tests.EditMode
         private const float MeasuredJabReachStart = 0.268f;
         private const float MeasuredJabReachEnd = 0.385f;
 
-        // Jab Cross.fbx reaches 90% of the right hand's extension between 0.613 s and 0.675 s.
-        private const float MeasuredCrossReachStart = 0.613f;
-        private const float MeasuredCrossReachEnd = 0.675f;
+        // Trimmed Cross clip (BoxerCross.anim 0.50-1.25 s of Jab Cross.fbx): the right hand's
+        // 90% extension is 0.113-0.175 s after the heavy state starts.
+        private const float MeasuredCrossReachStart = 0.113f;
+        private const float MeasuredCrossReachEnd = 0.175f;
 
         private FighterData _data;
         private HealthModel _health;
@@ -120,12 +121,13 @@ namespace OctagonFighter.Tests.EditMode
         [Test]
         public void HeavyPunchRequestsHeavyHitInsideTheCrossWindow()
         {
+            AttackDefinition cross = _attacks.Book.Heavy;
             Tick(FighterCommand.HeavyPunch, true, 0.01f);
 
-            Tick(FighterCommand.None, false, 0.59f);
+            Tick(FighterCommand.None, false, cross.ContactStartSeconds - (TickSeconds * 0.5f));
             Assert.IsFalse(_attacks.TryTakeHitRequest(out _), "The cross must not resolve during startup.");
 
-            Tick(FighterCommand.None, false, 0.02f);
+            Tick(FighterCommand.None, false, TickSeconds);
             Assert.IsTrue(_attacks.TryTakeHitRequest(out AttackHitRequest request));
             Assert.AreEqual(AttackSlot.Heavy, request.Slot);
             Assert.AreEqual(15f, request.Attack.Damage, 0.001f);

@@ -102,20 +102,20 @@ namespace OctagonFighter.Tests.PlayMode
             BeginFrames();
 
             yield return Press(Key.K);
-            yield return Sample(1.6f, new Vector2(0.45f, 0.98f), 0.03f, _ => Track());
+            yield return Sample(1.2f, new Vector2(0.05f, 0.50f), 0.03f, _ => Track());
             EndScenario();
 
             Log("T02 cross close");
 
             Assert.AreEqual(1, DamageEvents.Count, "A close cross must damage the opponent exactly once.");
             Assert.AreEqual(15, DamageEvents[0].Amount, "A cross must apply its authored 15 damage.");
-            // Authored cross window: 0.60-0.78 s (FD_Boxer: startup 0.60 s, active 0.18 s). The
-            // delay is measured from the first sampled attack frame, so allow one 60 Hz frame of
-            // quantization on either side.
+            // Authored trimmed-cross window: 0.10-0.28 s (FD_Boxer: startup 0.10 s, active 0.18 s).
+            // The delay is measured from the first sampled attack frame, so allow one 60 Hz frame
+            // of quantization on either side.
             Assert.That(
                 DamageEvents[0].Delay,
-                Is.InRange(0.58f, 0.80f),
-                "Cross damage must land in the authored contact window (0.60-0.78 s).");
+                Is.InRange(0.08f, 0.30f),
+                "Cross damage must land in the authored contact window (0.10-0.28 s).");
             Assert.Less(MaxAttackFacingDelta(), 0.5f, "The attacker must not turn during the cross.");
             Assert.Less(MinFistGap(), 0.09f, "The fist must actually reach the opponent's capsule.");
         }

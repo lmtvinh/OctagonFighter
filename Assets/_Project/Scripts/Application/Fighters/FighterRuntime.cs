@@ -85,6 +85,11 @@ namespace OctagonFighter.Application.Fighters
         public bool IsReactingToHit => _stateMachine.CurrentStateId == FighterStateId.HitReaction;
 
         /// <summary>
+        /// Gets a value indicating whether the fighter is holding a defensive block.
+        /// </summary>
+        public bool IsBlocking => _stateMachine.CurrentStateId == FighterStateId.Blocking;
+
+        /// <summary>
         /// Occurs after a successful state transition.
         /// </summary>
         public event Action<FighterStateChangedEvent> StateChanged;
@@ -351,6 +356,13 @@ namespace OctagonFighter.Application.Fighters
         private void BufferAttackIntent(in FighterIntent intent)
         {
             if (!intent.IsCommandPressed)
+            {
+                return;
+            }
+
+            // A blocking fighter cannot attack, so a punch pressed during the guard must not wait in
+            // the buffer and fire the moment the guard drops. The press is intentionally discarded.
+            if (_stateMachine.CurrentStateId == FighterStateId.Blocking)
             {
                 return;
             }

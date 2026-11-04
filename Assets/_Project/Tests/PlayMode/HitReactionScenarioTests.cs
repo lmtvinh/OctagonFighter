@@ -79,7 +79,7 @@ namespace OctagonFighter.Tests.PlayMode
             yield return Press(Key.K);
             yield return Sample(
                 1.3f,
-                new Vector2(0.55f, 0.95f),
+                new Vector2(0.08f, 0.80f),
                 0.05f,
                 _ => probe.Observe(Defender, DefenderAnimator));
             EndScenario();

@@ -78,9 +78,9 @@ MonoBehaviour:
     _heavy:
       _displayName: Cross
       _animationState: Cross
-      _startupSeconds: 0.6
+      _startupSeconds: 0.1
       _activeSeconds: 0.18
-      _recoverySeconds: 0.14
+      _recoverySeconds: 0.32
       _cooldownSeconds: 0.75
       _staminaCost: 12
       _damage: 15

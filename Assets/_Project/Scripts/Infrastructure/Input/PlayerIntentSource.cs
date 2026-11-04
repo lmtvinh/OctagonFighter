@@ -42,7 +42,16 @@ namespace OctagonFighter.Infrastructure.Input
             bool isCommandPressed = false;
             bool isCommandHeld = false;
 
-            if (lightPunchPressed)
+            // A held block outranks attack and dodge presses. The blocking state only accepts the
+            // block command, so reporting anything else while the button is held would silently
+            // drop the guard instead of keeping it up.
+            if (blockHeld)
+            {
+                command = FighterCommand.Block;
+                isCommandPressed = blockPressed;
+                isCommandHeld = true;
+            }
+            else if (lightPunchPressed)
             {
                 command = FighterCommand.LightPunch;
                 isCommandPressed = true;
@@ -56,12 +65,6 @@ namespace OctagonFighter.Infrastructure.Input
             {
                 command = FighterCommand.Dodge;
                 isCommandPressed = true;
-            }
-            else if (blockHeld)
-            {
-                command = FighterCommand.Block;
-                isCommandPressed = blockPressed;
-                isCommandHeld = true;
             }
 
             intent = new FighterIntent(

@@ -188,6 +188,9 @@ namespace OctagonFighter.Presentation.Fighter
 
             if (_hasBlocking)
             {
+                // The controller transitions on this flag into a dedicated Blocking state when one
+                // exists. If a build has the parameter but no guard state, the flag is harmless and
+                // the fighter keeps the locomotion pose while the block logic runs independently.
                 _animator.SetBool(IsBlockingParameter, snapshot.State == FighterStateId.Blocking);
             }
 
@@ -280,7 +283,6 @@ namespace OctagonFighter.Presentation.Fighter
             return state == FighterStateId.Idle ||
                    state == FighterStateId.Walk ||
                    state == FighterStateId.Run ||
-                   state == FighterStateId.Blocking ||
                    state == FighterStateId.Dodging;
         }
 

@@ -20,6 +20,14 @@ namespace OctagonFighter.Domain.StateMachine.States
         }
 
         /// <inheritdoc />
+        public override void Enter(in FighterStateContext context, in FighterIntent intent)
+        {
+            // Raising the guard cancels any strike that was buffered just before blocking. The
+            // player chose to defend, so that press must not fire the moment the guard is released.
+            context.Attacks.ClearBufferedAttack();
+        }
+
+        /// <inheritdoc />
         public override StateTickResult Tick(
             in FighterStateContext context,
             in FighterIntent intent,

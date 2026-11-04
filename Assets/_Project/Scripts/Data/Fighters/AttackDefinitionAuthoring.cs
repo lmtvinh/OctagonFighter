@@ -107,9 +107,9 @@ namespace OctagonFighter.Data.Fighters
             return new AttackDefinitionAuthoring(
                 "Cross",
                 "Cross",
-                0.60f,
+                0.10f,
                 0.18f,
-                0.14f,
+                0.32f,
                 0.75f,
                 12f,
                 15f,

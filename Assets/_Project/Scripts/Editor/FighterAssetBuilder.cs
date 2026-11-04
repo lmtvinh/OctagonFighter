@@ -36,8 +36,11 @@ namespace OctagonFighter.Editor
         private const string MoveYParameterName = "MoveY";
         private const string JabStateName = "Jab";
         private const string CrossStateName = "Cross";
+        private const string BlockingStateName = "Blocking";
+        private const string IsBlockingParameterName = "IsBlocking";
         private const string LightPunchToken = "Lead Jab";
         private const string HeavyPunchToken = "Cross";
+        private const string BlockingAnimationToken = "Center Block";
         private const string IdleAnimationPath =
             "Assets/_Project/Art/Animations/FightingIdle_mixamo.fbx";
         private const string WalkAnimationPath =
@@ -72,6 +75,7 @@ namespace OctagonFighter.Editor
                 walkPath,
                 strafePath);
             EnsureAttackAnimatorStates();
+            EnsureBlockingAnimatorState();
             GameObject fighterPrefab = CreateOrUpdateFighterPrefab(definition, animatorController);
             CreateOrUpdateDemoScene(fighterPrefab);
 
@@ -160,6 +164,7 @@ namespace OctagonFighter.Editor
             string crossPath = RequireAnimationPath(HeavyPunchToken);
             ConfigureHumanoidImport(jabPath);
             ConfigureHumanoidImport(crossPath);
+            EnsureCrossSubClip(crossPath);
 
             AnimationClip jabClip = LoadAnimationClip(jabPath, "jab");
             AnimationClip crossClip = LoadAnimationClip(crossPath, "cross");
@@ -201,6 +206,83 @@ namespace OctagonFighter.Editor
             Debug.Log($"Attack animator states ensured on '{AnimatorControllerPath}'.");
         }
 
+        /// <summary>
+        /// Adds the held-guard state to the existing animator controller without rebuilding it.
+        /// </summary>
+        /// <remarks>
+        /// The imported Center Block clip is a one-shot blocking drill rather than a looping guard
+        /// idle. It is played once on entry and then holds its final frame, which is close to the
+        /// starting guard pose, so the fighter visibly raises the guard and then stays there until
+        /// the simulation leaves the blocking state. The controller is edited in place because a
+        /// full rebuild would discard the authored hit-reaction states.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">Thrown when the controller or the guard clip is missing.</exception>
+        [MenuItem("OctagonFighter/Assets/Ensure Blocking Animator State")]
+        public static void EnsureBlockingAnimatorState()
+        {
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(AnimatorControllerPath);
+            if (controller == null)
+            {
+                throw new InvalidOperationException(
+                    $"Animator controller is missing at '{AnimatorControllerPath}'. " +
+                    "Run 'Rebuild Fighter Assets' first.");
+            }
+
+            string blockingPath = RequireAnimationPath(BlockingAnimationToken);
+            ConfigureHumanoidImport(blockingPath);
+
+            AnimationClip blockingClip = LoadAnimationClip(blockingPath, BlockingAnimationToken);
+            EnsureNonLooping(blockingClip, blockingPath);
+            EnsureParameter(controller, IsBlockingParameterName, AnimatorControllerParameterType.Bool);
+
+            AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
+            AnimatorState locomotionState = stateMachine.states
+                .Select(childState => childState.state)
+                .FirstOrDefault(state => state.name == LocomotionStateName);
+
+            if (locomotionState == null)
+            {
+                locomotionState = stateMachine.defaultState;
+            }
+
+            if (locomotionState == null)
+            {
+                throw new InvalidOperationException(
+                    "Animator controller has no Locomotion or default state to return to.");
+            }
+
+            AnimatorState blockingState = stateMachine.states
+                .Select(childState => childState.state)
+                .FirstOrDefault(state => state.name == BlockingStateName);
+
+            if (blockingState == null)
+            {
+                blockingState = stateMachine.AddState(BlockingStateName);
+            }
+
+            blockingState.motion = blockingClip;
+            blockingState.speed = 1f;
+
+            EnsureBoolTransition(
+                locomotionState,
+                blockingState,
+                IsBlockingParameterName,
+                expectedValue: true);
+            EnsureBoolTransition(
+                blockingState,
+                locomotionState,
+                IsBlockingParameterName,
+                expectedValue: false);
+
+            // The simulation state owns how long the guard is held. No exit-time transition may
+            // return to locomotion on its own.
+            RemoveSelfTimedReturn(blockingState, locomotionState);
+
+            EditorUtility.SetDirty(controller);
+            AssetDatabase.SaveAssets();
+            Debug.Log($"Blocking animator state ensured on '{AnimatorControllerPath}'.");
+        }
+
         private static AnimatorState EnsureAttackState(
             AnimatorStateMachine stateMachine,
             string stateName,
@@ -232,6 +314,38 @@ namespace OctagonFighter.Editor
             transition.hasFixedDuration = true;
             transition.duration = 0.05f;
             transition.AddCondition(AnimatorConditionMode.If, 0f, trigger);
+        }
+
+        private static void EnsureBoolTransition(
+            AnimatorState from,
+            AnimatorState to,
+            string parameter,
+            bool expectedValue,
+            float duration = 0.1f)
+        {
+            AnimatorStateTransition transition = from.transitions
+                .FirstOrDefault(candidate => candidate.destinationState == to);
+
+            if (transition == null)
+            {
+                transition = from.AddTransition(to);
+            }
+
+            transition.hasExitTime = false;
+            transition.hasFixedDuration = true;
+            transition.duration = duration;
+            transition.canTransitionToSelf = false;
+
+            AnimatorCondition[] existingConditions = transition.conditions;
+            for (int index = existingConditions.Length - 1; index >= 0; index--)
+            {
+                transition.RemoveCondition(existingConditions[index]);
+            }
+
+            transition.AddCondition(
+                expectedValue ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot,
+                0f,
+                parameter);
         }
 
         private static void RemoveSelfTimedReturn(AnimatorState from, AnimatorState to)
@@ -531,7 +645,7 @@ namespace OctagonFighter.Editor
             EnsureParameter(controller, SpeedParameterName, AnimatorControllerParameterType.Float);
             EnsureParameter(controller, MoveXParameterName, AnimatorControllerParameterType.Float);
             EnsureParameter(controller, MoveYParameterName, AnimatorControllerParameterType.Float);
-            EnsureParameter(controller, "IsBlocking", AnimatorControllerParameterType.Bool);
+            EnsureParameter(controller, IsBlockingParameterName, AnimatorControllerParameterType.Bool);
             EnsureParameter(controller, "IsDefeated", AnimatorControllerParameterType.Bool);
 
             AnimationClip idleClip = LoadAnimationClip(idlePath, "idle");
@@ -619,6 +733,44 @@ namespace OctagonFighter.Editor
             controller.AddParameter(parameterName, parameterType);
         }
 
+        private static void EnsureCrossSubClip(string path)
+        {
+            if (!(AssetImporter.GetAtPath(path) is ModelImporter importer))
+            {
+                return;
+            }
+
+            // Jab Cross.fbx is a combination clip. Frames 0-15 hold or throw the lead jab;
+            // the right straight lives in 15-38 (0.50-1.267 s at 30 fps). Importing only that
+            // range is what keeps the Cross animator state from presenting a left punch first.
+            ModelImporterClipAnimation[] existing = importer.clipAnimations;
+            bool alreadyConfigured = existing != null &&
+                existing.Length == 1 &&
+                existing[0].name == CrossStateName &&
+                Mathf.Approximately(existing[0].firstFrame, 15f) &&
+                Mathf.Approximately(existing[0].lastFrame, 38f);
+
+            if (alreadyConfigured)
+            {
+                return;
+            }
+
+            importer.clipAnimations = new[]
+            {
+                new ModelImporterClipAnimation
+                {
+                    name = CrossStateName,
+                    firstFrame = 15,
+                    lastFrame = 38,
+                    loopTime = false,
+                    keepOriginalOrientation = false,
+                    keepOriginalPositionY = true,
+                    keepOriginalPositionXZ = false,
+                },
+            };
+            importer.SaveAndReimport();
+        }
+
         private static AnimationClip LoadAnimationClip(string path, string token)
         {
             AnimationClip[] clips = AssetDatabase.LoadAllAssetsAtPath(path)
@@ -640,9 +792,9 @@ namespace OctagonFighter.Editor
                 throw new InvalidOperationException($"No animation clip found in '{path}'.");
             }
 
-            AnimationClip clip = clips
-                .OrderByDescending(c => c.length)
-                .First();
+            AnimationClip named = clips.FirstOrDefault(clip =>
+                clip.name.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0);
+            AnimationClip clip = named ?? clips.OrderByDescending(candidate => candidate.length).First();
 
             Debug.Log($"Using animation clip '{clip.name}' from '{path}'.");
             return clip;

@@ -6,7 +6,9 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using OctagonFighter.Application.Fighters;
 using OctagonFighter.Domain.Combat;
+using OctagonFighter.Domain.Health;
 using OctagonFighter.Domain.StateMachine;
 using OctagonFighter.Infrastructure.Combat;
 using OctagonFighter.Presentation.Fighter;
@@ -59,6 +61,7 @@ namespace OctagonFighter.Tests.PlayMode
         private float _previousCaptureDeltaTime;
         private readonly StringBuilder _csv = new StringBuilder();
         private readonly List<(float Delay, int Amount)> _damageEvents = new List<(float, int)>();
+        private readonly List<DamageEvent> _blockedHits = new List<DamageEvent>();
         private readonly List<Task> _pendingShotWrites = new List<Task>();
         private int _shotIndex;
         private float _nextShotTime;
@@ -76,6 +79,15 @@ namespace OctagonFighter.Tests.PlayMode
 
         /// <summary>Gets the health drops observed in the current scenario, with their delay from the last attack start.</summary>
         protected IReadOnlyList<(float Delay, int Amount)> DamageEvents => _damageEvents;
+
+        /// <summary>Gets the blocked strikes observed in the current scenario.</summary>
+        protected IReadOnlyList<DamageEvent> BlockedHits => _blockedHits;
+
+        /// <summary>Gets the number of times the defender entered a hit reaction in the current scenario.</summary>
+        protected int DefenderReactionEntries { get; private set; }
+
+        /// <summary>Gets the number of times the defender entered the terminal defeat state in the current scenario.</summary>
+        protected int DefenderDefeatEntries { get; private set; }
 
         /// <summary>Gets the state at which the current strike state was entered.</summary>
         protected float AttackStartedElapsed { get; private set; } = -1f;
@@ -132,6 +144,9 @@ namespace OctagonFighter.Tests.PlayMode
             Assert.IsTrue(Attacker.IsInitialized, "The player fighter did not initialize.");
             Assert.IsTrue(Defender.IsInitialized, "The opponent fighter did not initialize.");
 
+            Attacker.HitBlocked += OnStrikeBlocked;
+            Defender.StateChanged += OnDefenderStateChanged;
+
             Rig = Attacker.GetComponent<FighterStrikeRig>();
             Assert.IsNotNull(Rig, "FighterStrikeRig must be attached by FighterController.");
             AttackerAnimator = Attacker.GetComponentInChildren<Animator>();
@@ -182,6 +197,16 @@ namespace OctagonFighter.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator Restore()
         {
+            if (Defender != null)
+            {
+                Defender.StateChanged -= OnDefenderStateChanged;
+            }
+
+            if (Attacker != null)
+            {
+                Attacker.HitBlocked -= OnStrikeBlocked;
+            }
+
             if (_validationCamera != null)
             {
                 _validationCamera.targetTexture = null;
@@ -256,6 +281,9 @@ namespace OctagonFighter.Tests.PlayMode
                 "elapsed,state,health,yaw,posX,posZ,leftX,leftY,leftZ,clearance," +
                 "rightX,rightY,rightZ,animStateHash,animNormalized,defenderX,defenderZ");
             _damageEvents.Clear();
+            _blockedHits.Clear();
+            DefenderReactionEntries = 0;
+            DefenderDefeatEntries = 0;
             _health = Defender.Snapshot.CurrentHealth;
             AttackStartedElapsed = -1f;
             MinimumFistGap = float.NaN;
@@ -300,6 +328,22 @@ namespace OctagonFighter.Tests.PlayMode
         protected IEnumerator Release(Key key)
         {
             InputSystem.QueueStateEvent(_keyboard, new KeyboardState());
+            yield return null;
+        }
+
+        /// <summary>
+        /// Presses a key for one frame while another key stays held, then restores the held key.
+        /// </summary>
+        /// <remarks>
+        /// The single-key <see cref="Press"/> helper releases every other key. Tests that need to
+        /// prove input priority (a held block outranks a punch tap) must keep the modifier down,
+        /// so the keyboard state is queued with both keys and then restored to the held key.
+        /// </remarks>
+        protected IEnumerator PressWhileHolding(Key heldKey, Key pressedKey)
+        {
+            InputSystem.QueueStateEvent(_keyboard, new KeyboardState(heldKey, pressedKey));
+            yield return null;
+            InputSystem.QueueStateEvent(_keyboard, new KeyboardState(heldKey));
             yield return null;
         }
 
@@ -379,6 +423,60 @@ namespace OctagonFighter.Tests.PlayMode
                 FighterStateId.Idle,
                 Attacker.Snapshot.State,
                 "The fighter must return to idle after the strike.");
+        }
+
+        /// <summary>Replaces the opponent's intent source so a scenario can drive its guard.</summary>
+        protected void SetDefenderIntentSource(IFighterIntentSource source)
+        {
+            Assert.IsNotNull(source, "A replacement intent source is required.");
+            Defender.SetIntentSource(source);
+        }
+
+        /// <summary>Waits until the opponent reaches the requested state.</summary>
+        protected IEnumerator WaitForDefenderState(FighterStateId state, float timeoutSeconds = 1.5f)
+        {
+            float deadline = Time.time + timeoutSeconds;
+            while (Time.time < deadline && Defender.Snapshot.State != state)
+            {
+                yield return null;
+            }
+
+            Assert.AreEqual(state, Defender.Snapshot.State, $"Timed out waiting for the defender to reach {state}.");
+        }
+
+        /// <summary>Waits until the opponent's animator finishes entering the requested state.</summary>
+        protected IEnumerator WaitForDefenderAnimatorState(string stateName, float timeoutSeconds = 1.5f)
+        {
+            Assert.IsNotNull(DefenderAnimator, "The defender must have an animator.");
+            int stateHash = Animator.StringToHash(stateName);
+            float deadline = Time.time + timeoutSeconds;
+            while (Time.time < deadline &&
+                   DefenderAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash != stateHash)
+            {
+                yield return null;
+            }
+
+            Assert.AreEqual(
+                stateHash,
+                DefenderAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash,
+                $"Timed out waiting for the defender animator to enter {stateName}.");
+        }
+
+        private void OnStrikeBlocked(DamageEvent damage)
+        {
+            _blockedHits.Add(damage);
+        }
+
+        private void OnDefenderStateChanged(FighterStateChangedEvent stateChanged)
+        {
+            if (stateChanged.CurrentState == FighterStateId.HitReaction)
+            {
+                DefenderReactionEntries++;
+            }
+            else if (stateChanged.CurrentState == FighterStateId.Defeated)
+            {
+                DefenderDefeatEntries++;
+            }
         }
 
         protected float AttackerYaw

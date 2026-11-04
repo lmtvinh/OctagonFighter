@@ -25,7 +25,7 @@ namespace OctagonFighter.Presentation.Fighter
     [RequireComponent(typeof(StaminaComponent))]
     [RequireComponent(typeof(FighterMotor))]
     [RequireComponent(typeof(FighterIdentity))]
-    public sealed class FighterController : MonoBehaviour
+    public sealed class FighterController : MonoBehaviour, IDamageable, IGuardState
     {
         private const int MaximumAutoTicksPerFrame = 8;
 
@@ -59,6 +59,7 @@ namespace OctagonFighter.Presentation.Fighter
         private HealthComponent _healthComponent;
         private StaminaComponent _staminaComponent;
         private IFighterIntentSource _intentSource;
+        private SwappableIntentSource _runtimeIntentSource;
         private ICombatClock _clock;
         private FighterRuntime _runtime;
         private bool _ownsClock = true;
@@ -88,9 +89,41 @@ namespace OctagonFighter.Presentation.Fighter
         public bool IsReactingToHit => _runtime != null && _runtime.IsReactingToHit;
 
         /// <summary>
+        /// Gets a value indicating whether the fighter is holding a defensive block.
+        /// </summary>
+        public bool IsBlocking => _runtime != null && _runtime.IsBlocking;
+
+        /// <summary>
         /// Gets the damage receiver for this fighter.
         /// </summary>
-        public IDamageable Damageable => _healthComponent;
+        public IDamageable Damageable => this;
+
+        /// <summary>
+        /// Applies resolved damage, unless the fighter is currently blocking.
+        /// </summary>
+        /// <remarks>
+        /// The controller is the combat-facing damage receiver so blocking is decided before the
+        /// health adapter sees the hit. A blocked strike is reported as zero applied damage and
+        /// never raises <see cref="HealthComponent.Damaged"/>, which is what keeps it from starting
+        /// a hit reaction.
+        /// </remarks>
+        public DamageResult ApplyDamage(in DamageEvent damage)
+        {
+            if (IsBlocking)
+            {
+                // Reuse the health adapter's zero-damage path so callers still receive consistent
+                // previous/current health values without changing health or raising events.
+                return _healthComponent.ApplyDamage(new DamageEvent(
+                    damage.AttackerId,
+                    damage.TargetId,
+                    0f,
+                    damage.Type,
+                    damage.Region,
+                    damage.Tick));
+            }
+
+            return _healthComponent.ApplyDamage(damage);
+        }
 
         /// <summary>
         /// Gets the read-only health source for this fighter.
@@ -121,6 +154,37 @@ namespace OctagonFighter.Presentation.Fighter
         /// Occurs once when the fighter becomes defeated.
         /// </summary>
         public event Action<FighterDefeatedEvent> Defeated;
+
+        /// <summary>
+        /// Occurs when a strike thrown by this fighter is blocked, carrying the damage that would
+        /// have applied to the guarded target.
+        /// </summary>
+        public event Action<DamageEvent> HitBlocked;
+
+        /// <summary>
+        /// Replaces the intent source consumed by the running simulation.
+        /// </summary>
+        /// <remarks>
+        /// The runtime reads through a delegating wrapper, so a scene can hand control from player
+        /// input to an AI or scripted source without rebuilding the fighter. This is also what lets
+        /// automated scenarios drive the non-player fighter deterministically.
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">Thrown when the source is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the fighter is not initialized.</exception>
+        public void SetIntentSource(IFighterIntentSource intentSource)
+        {
+            if (intentSource == null)
+            {
+                throw new ArgumentNullException(nameof(intentSource));
+            }
+
+            if (!_isInitialized || _runtimeIntentSource == null)
+            {
+                throw new InvalidOperationException("Fighter controller is not initialized.");
+            }
+
+            _runtimeIntentSource.Current = intentSource;
+        }
 
         /// <summary>
         /// Enables or disables the controller's own fixed-tick loop.
@@ -215,6 +279,7 @@ namespace OctagonFighter.Presentation.Fighter
             _hitDetector = hitDetector;
 
             _intentSource = intentSource;
+            _runtimeIntentSource = new SwappableIntentSource(intentSource);
             _identity.Initialize(data.Id);
             _healthComponent.Initialize(data.Health);
             _staminaComponent.Initialize(data.Stamina);
@@ -228,7 +293,7 @@ namespace OctagonFighter.Presentation.Fighter
                 _healthComponent.Model,
                 _staminaComponent.Model,
                 stateMachine,
-                _intentSource,
+                _runtimeIntentSource,
                 _clock);
 
             _runtime.StateChanged += OnRuntimeStateChanged;
@@ -348,6 +413,8 @@ namespace OctagonFighter.Presentation.Fighter
             _healthComponent.Damaged -= OnDamaged;
             _runtime.Dispose();
             _runtime = null;
+            _runtimeIntentSource = null;
+            HitBlocked = null;
             _hitRegistry.Clear();
             _isInitialized = false;
         }
@@ -485,13 +552,33 @@ namespace OctagonFighter.Presentation.Fighter
                 return;
             }
 
-            DamageResult result = damageable.ApplyDamage(new DamageEvent(
+            var damageEvent = new DamageEvent(
                 request.AttackerId,
                 candidate.TargetId,
                 request.Attack.Damage,
                 DamageType.Impact,
                 request.Attack.Region,
-                request.Tick));
+                request.Tick);
+
+            // The claim above already consumed this strike for the target, so a blocked hit is
+            // resolved exactly once and the remaining contact ticks stay silent. Guarding is
+            // checked here, before health, so no damage is applied and no reaction starts.
+            if (damageable is IGuardState guard && guard.IsBlocking)
+            {
+                HitBlocked?.Invoke(damageEvent);
+
+                if (_logResolvedHits)
+                {
+                    Debug.Log(
+                        $"{request.AttackerId.Value} was blocked by {candidate.TargetId.Value} " +
+                        $"({request.Attack.DisplayName}, {request.Attack.Region}).",
+                        this);
+                }
+
+                return;
+            }
+
+            DamageResult result = damageable.ApplyDamage(damageEvent);
 
             if (_logResolvedHits)
             {
@@ -512,6 +599,37 @@ namespace OctagonFighter.Presentation.Fighter
         {
             return state == FighterStateId.LightPunch ||
                    state == FighterStateId.HeavyPunch;
+        }
+
+        /// <summary>
+        /// Delegates intent reads to a replaceable source so control can change hands at runtime.
+        /// </summary>
+        private sealed class SwappableIntentSource : IFighterIntentSource
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="SwappableIntentSource"/> class.
+            /// </summary>
+            public SwappableIntentSource(IFighterIntentSource initialSource)
+            {
+                Current = initialSource;
+            }
+
+            /// <summary>
+            /// Gets or sets the source that currently supplies intents.
+            /// </summary>
+            public IFighterIntentSource Current { get; set; }
+
+            /// <inheritdoc />
+            public bool TryGetIntent(TickId tick, out FighterIntent intent)
+            {
+                if (Current != null)
+                {
+                    return Current.TryGetIntent(tick, out intent);
+                }
+
+                intent = default;
+                return false;
+            }
         }
     }
 }

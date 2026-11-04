@@ -79,12 +79,12 @@ namespace OctagonFighter.Domain.Combat
         /// <remarks>
         /// Timings are measured from the imported clips at their authored frame rate:
         /// <c>Boxing_mixamo.fbx</c> frames 50-64 (24 fps, 0.583 s) is the lead jab, whose left hand
-        /// reaches 0.523 m forward at 0.317 s; <c>Jab Cross.fbx</c> (2.233 s, 30 fps) reaches its
-        /// right-hand peak at 0.638 s. Both windows bracket the measured extension plateau rather
-        /// than only its onset: Play Mode sampling showed the presented fist still extending until
-        /// ~0.73 s on the cross, so the old 0.60-0.70 s window closed before the hand's deepest
-        /// sample. The recovery covers the hand's return to guard, and the clips' long idle tails
-        /// are cut off by ending the state after the useful motion.
+        /// reaches 0.523 m forward at 0.317 s. The shipped Cross presentation is the right-hand
+        /// portion of <c>Jab Cross.fbx</c> / <c>BoxerCross.anim</c>, trimmed to 0.50-1.25 s so the
+        /// heavy state no longer plays the combo's lead jab. Inside that window the right hand's
+        /// 90% extension is 0.113-0.175 s (0.613-0.675 s on the untrimmed source) and the deepest
+        /// sample is ~0.23 s. Startup 0.10 / active 0.18 brackets that plateau; recovery returns
+        /// the hand toward guard before the unused tail.
         /// </remarks>
         public static AttackBook CreateDefault()
         {
@@ -105,9 +105,9 @@ namespace OctagonFighter.Domain.Combat
             var heavy = new AttackDefinition(
                 "Cross",
                 "Cross",
-                0.60f,
+                0.10f,
                 0.18f,
-                0.14f,
+                0.32f,
                 0.75f,
                 12f,
                 15f,

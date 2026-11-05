@@ -189,9 +189,13 @@ namespace OctagonFighter.Presentation.Fighter
             if (_hasBlocking)
             {
                 // The controller transitions on this flag into a dedicated Blocking state when one
-                // exists. If a build has the parameter but no guard state, the flag is harmless and
-                // the fighter keeps the locomotion pose while the block logic runs independently.
-                _animator.SetBool(IsBlockingParameter, snapshot.State == FighterStateId.Blocking);
+                // exists. The pose is held through the short block-impact reaction; only a guard
+                // break drops it. If a build has the parameter but no guard state, the flag is
+                // harmless and the fighter keeps the locomotion pose while block logic runs.
+                _animator.SetBool(
+                    IsBlockingParameter,
+                    snapshot.State == FighterStateId.Blocking ||
+                    snapshot.State == FighterStateId.BlockImpact);
             }
 
             if (_hasDefeated)
@@ -208,6 +212,13 @@ namespace OctagonFighter.Presentation.Fighter
                 else if (snapshot.State == FighterStateId.HeavyPunch)
                 {
                     EnterAttackState(CrossParameter, CrossState, _hasCross, _hasCrossState);
+                }
+                else if (snapshot.State == FighterStateId.GuardBreak && _hasLocomotionState)
+                {
+                    // No dedicated guard-break clip ships. Dropping the blocking flag would already
+                    // return the controller to locomotion, but the explicit fade makes the fallback
+                    // deterministic on controllers whose transitions do not react to the flag.
+                    _animator.CrossFadeInFixedTime(LocomotionState, ReturnFadeSeconds, 0);
                 }
                 else if (IsCommittedVisualState((FighterStateId)_lastState) &&
                          snapshot.State != FighterStateId.Defeated &&
@@ -290,7 +301,8 @@ namespace OctagonFighter.Presentation.Fighter
         {
             return state == FighterStateId.LightPunch ||
                    state == FighterStateId.HeavyPunch ||
-                   state == FighterStateId.HitReaction;
+                   state == FighterStateId.HitReaction ||
+                   state == FighterStateId.GuardBreak;
         }
     }
 }

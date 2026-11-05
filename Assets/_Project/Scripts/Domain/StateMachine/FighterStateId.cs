@@ -68,6 +68,16 @@ namespace OctagonFighter.Domain.StateMachine
         /// <summary>
         /// Slow heavy strike (cross).
         /// </summary>
-        HeavyPunch = 12
+        HeavyPunch = 12,
+
+        /// <summary>
+        /// Stun after the guard is depleted by a blocked strike.
+        /// </summary>
+        GuardBreak = 13,
+
+        /// <summary>
+        /// Short reaction after a strike is absorbed by the guard.
+        /// </summary>
+        BlockImpact = 14
     }
 }

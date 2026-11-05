@@ -4,6 +4,7 @@ using OctagonFighter.Core.Ids;
 using OctagonFighter.Core.Time;
 using OctagonFighter.Domain.Combat;
 using OctagonFighter.Domain.Fighters;
+using OctagonFighter.Domain.Guard;
 using OctagonFighter.Domain.Health;
 using OctagonFighter.Domain.Stamina;
 using OctagonFighter.Domain.StateMachine;
@@ -23,6 +24,7 @@ namespace OctagonFighter.Application.Fighters
         private readonly IFighterIntentSource _intentSource;
         private readonly ICombatClock _clock;
         private readonly AttackTracker _attacks;
+        private readonly GuardModel _guard;
         private FighterSnapshot _snapshot;
         private bool _pendingDefeat;
         private bool _defeatAnnounced;
@@ -52,6 +54,11 @@ namespace OctagonFighter.Application.Fighters
         /// Gets the attack cooldown, input buffer, and hit-request tracker.
         /// </summary>
         public AttackTracker Attacks => _attacks;
+
+        /// <summary>
+        /// Gets the guard model.
+        /// </summary>
+        public GuardModel Guard => _guard;
 
         /// <summary>
         /// Gets the latest immutable snapshot.
@@ -85,9 +92,18 @@ namespace OctagonFighter.Application.Fighters
         public bool IsReactingToHit => _stateMachine.CurrentStateId == FighterStateId.HitReaction;
 
         /// <summary>
-        /// Gets a value indicating whether the fighter is holding a defensive block.
+        /// Gets a value indicating whether the fighter is holding a defensive block. The guard stays
+        /// active during the short block-impact reaction, but not while the guard is broken.
         /// </summary>
-        public bool IsBlocking => _stateMachine.CurrentStateId == FighterStateId.Blocking;
+        public bool IsBlocking =>
+            !_guard.IsBroken &&
+            (_stateMachine.CurrentStateId == FighterStateId.Blocking ||
+             _stateMachine.CurrentStateId == FighterStateId.BlockImpact);
+
+        /// <summary>
+        /// Gets a value indicating whether the guard has been depleted.
+        /// </summary>
+        public bool IsGuardBroken => _guard.IsBroken;
 
         /// <summary>
         /// Occurs after a successful state transition.
@@ -128,6 +144,7 @@ namespace OctagonFighter.Application.Fighters
             _intentSource = intentSource ?? throw new ArgumentNullException(nameof(intentSource));
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
             _attacks = new AttackTracker(data.Attacks);
+            _guard = new GuardModel(data.Guard);
 
             _health.KnockedOut += OnHealthKnockedOut;
 
@@ -168,17 +185,28 @@ namespace OctagonFighter.Application.Fighters
 
             if (_stateMachine.CurrentStateId != FighterStateId.Defeated)
             {
+                FighterStateId stateBeforeTick = _stateMachine.CurrentStateId;
                 _stamina.Tick(deltaSeconds);
+                _guard.Tick(deltaSeconds, IsBlocking);
                 _attacks.Tick(deltaSeconds);
                 BufferAttackIntent(intent);
 
-                FighterSnapshot beforeTick = CreateSnapshot(_stateMachine.CurrentStateId, tick);
+                FighterSnapshot beforeTick = CreateSnapshot(stateBeforeTick, tick);
                 FighterStateContext context = CreateContext(beforeTick);
                 StateTransition? transition = _stateMachine.Tick(context, intent, deltaSeconds);
 
                 if (transition.HasValue)
                 {
                     RaiseStateChanged(transition.Value);
+                }
+
+                if (stateBeforeTick == FighterStateId.GuardBreak &&
+                    _stateMachine.CurrentStateId != FighterStateId.GuardBreak &&
+                    _stateMachine.CurrentStateId != FighterStateId.Defeated)
+                {
+                    // The stun owns the broken state for its whole duration. Only when control is
+                    // handed back does the fighter regain the authored post-break guard fraction.
+                    _guard.CompleteGuardBreak();
                 }
 
                 if (_attacks.TryTakeHitRequest(out AttackHitRequest hitRequest))
@@ -228,6 +256,128 @@ namespace OctagonFighter.Application.Fighters
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Resolves a blocked strike that carries authored guard values.
+        /// </summary>
+        /// <remarks>
+        /// A blocked strike is never immune: the authored fraction of its damage passes through the
+        /// guard as chip health damage, while the strike's guard damage is amplified by impact
+        /// strength and the remaining guard. The block reaction and any guard break are decided here,
+        /// after the damage so defeat always wins over a simultaneous guard break.
+        /// </remarks>
+        public BlockResolution ApplyBlock(in AttackDefinition attack, in DamageEvent damage)
+        {
+            ThrowIfDisposed();
+
+            if (!IsBlocking)
+            {
+                return BlockResolution.NotBlocked;
+            }
+
+            return ResolveBlock(
+                attack.GuardDamage,
+                attack.ImpactStrength,
+                attack.BlockStaminaCost,
+                damage);
+        }
+
+        /// <summary>
+        /// Resolves a blocked hit that has no authored strike metadata.
+        /// </summary>
+        public BlockResolution ApplyBlock(in DamageEvent damage)
+        {
+            ThrowIfDisposed();
+
+            if (!IsBlocking)
+            {
+                return BlockResolution.NotBlocked;
+            }
+
+            // Direct damage has no authored impact curve, so it uses the profile's flat conversion
+            // and stamina cost. This keeps externally applied blocked hits deterministic.
+            return ResolveBlock(
+                damage.Amount * _data.Guard.DirectGuardDamagePerDamagePoint,
+                impactStrength: 0f,
+                _data.Guard.DirectBlockStaminaCost,
+                damage);
+        }
+
+        private BlockResolution ResolveBlock(
+            float guardDamage,
+            float impactStrength,
+            float blockStaminaCost,
+            in DamageEvent damage)
+        {
+            float staminaSpent = 0f;
+            if (blockStaminaCost > 0f &&
+                _stamina.TrySpend(new StaminaCost(blockStaminaCost)))
+            {
+                staminaSpent = blockStaminaCost;
+            }
+
+            // Chip damage goes straight through the health model. It must not raise the health
+            // adapter's Damaged event, because a blocked strike is not a confirmed hit and must not
+            // start a hit reaction.
+            float chipDamage = damage.Amount * _data.Guard.BlockedHealthDamageMultiplier;
+            DamageResult healthDamage = chipDamage > 0f
+                ? _health.ApplyDamage(new DamageEvent(
+                    damage.AttackerId,
+                    damage.TargetId,
+                    chipDamage,
+                    damage.Type,
+                    damage.Region,
+                    damage.Tick))
+                : default;
+
+            GuardDamageResult guardResult = _guard.ApplyGuardDamage(guardDamage, impactStrength);
+            float pushbackDistance = _data.Guard.PushbackDistanceMeters;
+
+            // Defeat is terminal and always wins over a guard break caused by the same strike.
+            if (_health.IsKnockedOut || _pendingDefeat)
+            {
+                ForceDefeat(damage.Tick);
+            }
+            else if (guardResult.BecameBroken)
+            {
+                ForceReactionState(FighterStateId.GuardBreak, damage.Tick, restartCurrentState: false);
+            }
+            else
+            {
+                ForceReactionState(FighterStateId.BlockImpact, damage.Tick, restartCurrentState: true);
+            }
+
+            return new BlockResolution(
+                wasBlocked: true,
+                healthDamage,
+                guardResult,
+                pushbackDistance,
+                staminaSpent);
+        }
+
+        private bool ForceReactionState(
+            FighterStateId state,
+            TickId tick,
+            bool restartCurrentState)
+        {
+            FighterSnapshot snapshot = CreateSnapshot(_stateMachine.CurrentStateId, tick);
+            FighterStateContext context = CreateContext(snapshot);
+
+            if (_stateMachine.CurrentStateId == state)
+            {
+                return restartCurrentState &&
+                       _stateMachine.RestartCurrentState(context, FighterIntent.None);
+            }
+
+            FighterStateId previousState = _stateMachine.CurrentStateId;
+            if (!_stateMachine.ForceTransition(state, context, FighterIntent.None))
+            {
+                return false;
+            }
+
+            RaiseStateChanged(new StateTransition(previousState, state, tick));
+            return true;
         }
 
         /// <summary>
@@ -361,8 +511,9 @@ namespace OctagonFighter.Application.Fighters
             }
 
             // A blocking fighter cannot attack, so a punch pressed during the guard must not wait in
-            // the buffer and fire the moment the guard drops. The press is intentionally discarded.
-            if (_stateMachine.CurrentStateId == FighterStateId.Blocking)
+            // the buffer and fire the moment the guard drops. The press is intentionally discarded
+            // for the whole guard reaction, including a guard break.
+            if (IsBlocking || _stateMachine.CurrentStateId == FighterStateId.GuardBreak)
             {
                 return;
             }

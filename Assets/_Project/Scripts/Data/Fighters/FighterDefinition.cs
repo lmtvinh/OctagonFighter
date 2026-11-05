@@ -31,6 +31,9 @@ namespace OctagonFighter.Data.Fighters
         [Header("Stamina")]
         [SerializeField] private StaminaProfileAuthoring _stamina = StaminaProfileAuthoring.CreateDefault();
 
+        [Header("Guard")]
+        [SerializeField] private GuardProfileAuthoring _guard = GuardProfileAuthoring.CreateDefault();
+
         [Header("Movement")]
         [SerializeField] private MovementProfileAuthoring _movement = MovementProfileAuthoring.CreateDefault();
 
@@ -69,7 +72,8 @@ namespace OctagonFighter.Data.Fighters
                     _health.ToDomain(),
                     _stamina.ToDomain(),
                     _movement.ToDomain(),
-                    _attacks.ToDomain());
+                    _attacks.ToDomain(),
+                    _guard.ToDomain());
             }
             catch (Exception exception) when (
                 exception is ArgumentException ||
@@ -116,6 +120,11 @@ namespace OctagonFighter.Data.Fighters
             if (!_stamina.TryValidate(out string staminaError))
             {
                 errors.Append(staminaError).Append(' ');
+            }
+
+            if (!_guard.TryValidate(out string guardError))
+            {
+                errors.Append(guardError).Append(' ');
             }
 
             if (!_movement.TryValidate(out string movementError))

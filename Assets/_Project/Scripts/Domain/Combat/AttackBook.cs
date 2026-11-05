@@ -100,7 +100,10 @@ namespace OctagonFighter.Domain.Combat
                 0.95f,
                 0.06f,
                 HitRegion.Head,
-                StrikeHand.Left);
+                StrikeHand.Left,
+                guardDamage: 10f,
+                impactStrength: 0.25f,
+                blockStaminaCost: 3f);
 
             var heavy = new AttackDefinition(
                 "Cross",
@@ -114,7 +117,10 @@ namespace OctagonFighter.Domain.Combat
                 1.05f,
                 0.07f,
                 HitRegion.Body,
-                StrikeHand.Right);
+                StrikeHand.Right,
+                guardDamage: 24f,
+                impactStrength: 0.8f,
+                blockStaminaCost: 7f);
 
             return new AttackBook(light, heavy, 0.25f);
         }

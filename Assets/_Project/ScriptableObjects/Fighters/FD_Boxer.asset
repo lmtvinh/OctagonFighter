@@ -50,6 +50,22 @@ MonoBehaviour:
       _damageMultiplier: 0.7
       _defenseMultiplier: 0.75
       _regenMultiplier: 0.5
+  _guard:
+    _maxGuard: 100
+    _blockedHealthDamageMultiplier: 0.25
+    _recoveryDelaySeconds: 1.5
+    _recoveryPerSecond: 15
+    _blockImpactSeconds: 0.18
+    _guardBreakSeconds: 0.9
+    _pushbackDistanceMeters: 0.28
+    _impactGuardDamageBonus: 0.75
+    _lowGuardDamageBonus: 0.5
+    _lowGuardThresholdFraction: 0.25
+    _minimumGuardDamageMultiplier: 1
+    _maximumGuardDamageMultiplier: 2.25
+    _directGuardDamagePerDamagePoint: 1
+    _directBlockStaminaCost: 4
+    _guardBreakRecoveryFraction: 0.35
   _movement:
     _forwardSpeed: 2.6
     _backwardSpeed: 2.1
@@ -70,6 +86,9 @@ MonoBehaviour:
       _recoverySeconds: 0.16
       _cooldownSeconds: 0.35
       _staminaCost: 6
+      _guardDamage: 10
+      _impactStrength: 0.25
+      _blockStaminaCost: 3
       _damage: 8
       _range: 0.95
       _radius: 0.06
@@ -83,6 +102,9 @@ MonoBehaviour:
       _recoverySeconds: 0.32
       _cooldownSeconds: 0.75
       _staminaCost: 12
+      _guardDamage: 24
+      _impactStrength: 0.8
+      _blockStaminaCost: 7
       _damage: 15
       _range: 1.05
       _radius: 0.07

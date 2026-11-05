@@ -31,6 +31,15 @@ namespace OctagonFighter.Data.Fighters
         [SerializeField] private float _staminaCost;
 
         [Min(0f)]
+        [SerializeField] private float _guardDamage;
+
+        [Range(0f, 1f)]
+        [SerializeField] private float _impactStrength;
+
+        [Min(0f)]
+        [SerializeField] private float _blockStaminaCost;
+
+        [Min(0f)]
         [SerializeField] private float _damage;
 
         [Min(0f)]
@@ -58,7 +67,10 @@ namespace OctagonFighter.Data.Fighters
             float range,
             float radius,
             HitRegion region,
-            StrikeHand hand)
+            StrikeHand hand,
+            float guardDamage = 0f,
+            float impactStrength = 0f,
+            float blockStaminaCost = 0f)
         {
             _displayName = displayName;
             _animationState = animationState;
@@ -67,6 +79,9 @@ namespace OctagonFighter.Data.Fighters
             _recoverySeconds = recoverySeconds;
             _cooldownSeconds = cooldownSeconds;
             _staminaCost = staminaCost;
+            _guardDamage = guardDamage;
+            _impactStrength = impactStrength;
+            _blockStaminaCost = blockStaminaCost;
             _damage = damage;
             _range = range;
             _radius = radius;
@@ -91,7 +106,10 @@ namespace OctagonFighter.Data.Fighters
                 0.95f,
                 0.06f,
                 HitRegion.Head,
-                StrikeHand.Left);
+                StrikeHand.Left,
+                guardDamage: 10f,
+                impactStrength: 0.25f,
+                blockStaminaCost: 3f);
         }
 
         /// <summary>
@@ -116,7 +134,10 @@ namespace OctagonFighter.Data.Fighters
                 1.05f,
                 0.07f,
                 HitRegion.Body,
-                StrikeHand.Right);
+                StrikeHand.Right,
+                guardDamage: 24f,
+                impactStrength: 0.8f,
+                blockStaminaCost: 7f);
         }
 
         /// <summary>
@@ -136,7 +157,10 @@ namespace OctagonFighter.Data.Fighters
                 _range,
                 _radius,
                 _region,
-                _hand);
+                _hand,
+                _guardDamage,
+                _impactStrength,
+                _blockStaminaCost);
         }
 
         /// <summary>

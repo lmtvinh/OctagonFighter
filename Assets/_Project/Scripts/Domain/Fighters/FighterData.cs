@@ -1,6 +1,7 @@
 using System;
 using OctagonFighter.Core.Ids;
 using OctagonFighter.Domain.Combat;
+using OctagonFighter.Domain.Guard;
 using OctagonFighter.Domain.Health;
 using OctagonFighter.Domain.Stamina;
 
@@ -42,6 +43,11 @@ namespace OctagonFighter.Domain.Fighters
         public StaminaProfile Stamina { get; }
 
         /// <summary>
+        /// Gets the guard configuration.
+        /// </summary>
+        public GuardProfile Guard { get; }
+
+        /// <summary>
         /// Gets the movement and reaction timing configuration.
         /// </summary>
         public MovementProfile Movement { get; }
@@ -63,7 +69,8 @@ namespace OctagonFighter.Domain.Fighters
             HealthProfile health,
             StaminaProfile stamina,
             MovementProfile movement,
-            AttackBook attacks)
+            AttackBook attacks,
+            GuardProfile guard = default)
         {
             if (id.IsEmpty)
             {
@@ -86,6 +93,7 @@ namespace OctagonFighter.Domain.Fighters
             Body = body;
             Health = health;
             Stamina = stamina;
+            Guard = guard.IsDefined ? guard : GuardProfile.CreateDefault();
             Movement = movement;
             Attacks = attacks;
         }
@@ -107,7 +115,8 @@ namespace OctagonFighter.Domain.Fighters
                 Health,
                 Stamina,
                 Movement,
-                Attacks);
+                Attacks,
+                Guard);
         }
     }
 }

@@ -51,6 +51,21 @@ namespace OctagonFighter.Domain.Combat
         public float StaminaCost { get; }
 
         /// <summary>
+        /// Gets the guard damage applied when this strike is blocked.
+        /// </summary>
+        public float GuardDamage { get; }
+
+        /// <summary>
+        /// Gets the normalized impact strength used to amplify blocked guard damage.
+        /// </summary>
+        public float ImpactStrength { get; }
+
+        /// <summary>
+        /// Gets the stamina spent by the defender when this strike is blocked.
+        /// </summary>
+        public float BlockStaminaCost { get; }
+
+        /// <summary>
         /// Gets the resolved damage applied on a successful hit.
         /// </summary>
         public float Damage { get; }
@@ -121,7 +136,10 @@ namespace OctagonFighter.Domain.Combat
             float range,
             float radius,
             HitRegion region,
-            StrikeHand hand)
+            StrikeHand hand,
+            float guardDamage = 0f,
+            float impactStrength = 0f,
+            float blockStaminaCost = 0f)
         {
             if (string.IsNullOrWhiteSpace(displayName))
             {
@@ -138,6 +156,9 @@ namespace OctagonFighter.Domain.Combat
             ValidateNonNegative(recoverySeconds, nameof(recoverySeconds));
             ValidateNonNegative(cooldownSeconds, nameof(cooldownSeconds));
             ValidateNonNegative(staminaCost, nameof(staminaCost));
+            ValidateNonNegative(guardDamage, nameof(guardDamage));
+            ValidateUnitInterval(impactStrength, nameof(impactStrength));
+            ValidateNonNegative(blockStaminaCost, nameof(blockStaminaCost));
             ValidatePositive(damage, nameof(damage));
             ValidatePositive(range, nameof(range));
             ValidatePositive(radius, nameof(radius));
@@ -159,6 +180,9 @@ namespace OctagonFighter.Domain.Combat
             RecoverySeconds = recoverySeconds;
             CooldownSeconds = cooldownSeconds;
             StaminaCost = staminaCost;
+            GuardDamage = guardDamage;
+            ImpactStrength = impactStrength;
+            BlockStaminaCost = blockStaminaCost;
             Damage = damage;
             Range = range;
             Radius = radius;
@@ -214,6 +238,16 @@ namespace OctagonFighter.Domain.Combat
             if (!float.IsFinite(value) || value <= 0f)
             {
                 throw new ArgumentOutOfRangeException(parameterName, "Value must be finite and positive.");
+            }
+        }
+
+        private static void ValidateUnitInterval(float value, string parameterName)
+        {
+            if (!float.IsFinite(value) || value < 0f || value > 1f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    parameterName,
+                    "Value must be finite and within [0, 1].");
             }
         }
     }

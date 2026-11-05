@@ -32,6 +32,7 @@ namespace OctagonFighter.Infrastructure.Movement
         private bool _isInitialized;
         private Transform _facingTarget;
         private float _facingSearchTimer;
+        private float _pendingPushbackMeters;
 
         /// <summary>
         /// Gets the planar velocity applied during the most recent tick.
@@ -67,6 +68,29 @@ namespace OctagonFighter.Infrastructure.Movement
             }
 
             _isInitialized = true;
+        }
+
+        /// <summary>
+        /// Queues a controlled pushback that is applied on the next fixed tick.
+        /// </summary>
+        /// <remarks>
+        /// Pushback is deliberately not applied immediately: the guard reaction starts on the same
+        /// tick as the hit, and moving the character controller from inside event resolution would
+        /// leave the presentation and physics one tick out of step. The largest pending distance
+        /// wins so two hits cannot stack into an uncontrolled shove.
+        /// </remarks>
+        /// <param name="distanceMeters">Distance in meters along the fighter's backward direction.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the distance is invalid.</exception>
+        public void ApplyPushback(float distanceMeters)
+        {
+            if (!float.IsFinite(distanceMeters) || distanceMeters < 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(distanceMeters),
+                    "Pushback distance must be finite and non-negative.");
+            }
+
+            _pendingPushbackMeters = Mathf.Max(_pendingPushbackMeters, distanceMeters);
         }
 
         /// <summary>
@@ -130,7 +154,15 @@ namespace OctagonFighter.Infrastructure.Movement
 
             UpdateVerticalVelocity(deltaSeconds);
 
-            Vector3 displacement = (PlanarVelocity + (Vector3.up * _verticalVelocity)) * deltaSeconds;
+            Vector3 pushback = Vector3.zero;
+            if (_pendingPushbackMeters > 0f)
+            {
+                pushback = -transform.forward * _pendingPushbackMeters;
+                _pendingPushbackMeters = 0f;
+            }
+
+            Vector3 displacement =
+                ((PlanarVelocity + (Vector3.up * _verticalVelocity)) * deltaSeconds) + pushback;
             _characterController.Move(displacement);
         }
 

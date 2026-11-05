@@ -19,6 +19,8 @@ namespace OctagonFighter.Application.Fighters
             stateMachine.Register(new WalkState());
             stateMachine.Register(new RunState());
             stateMachine.Register(new BlockingState());
+            stateMachine.Register(new BlockImpactState());
+            stateMachine.Register(new GuardBreakState());
             stateMachine.Register(new DodgingState());
             stateMachine.Register(new LightPunchState());
             stateMachine.Register(new HeavyPunchState());

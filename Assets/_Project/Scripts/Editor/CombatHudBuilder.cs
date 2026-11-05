@@ -17,7 +17,8 @@ namespace OctagonFighter.Editor
     /// Layout (anchored to the top edge, mirrored per side):
     ///   PlayerHealth  (container, top-left)  — name row, framed Health bar with damage trail, accent rule
     ///   PlayerStamina (container, below it)  — small caps label + framed Stamina bar
-    ///   OpponentHealth / OpponentStamina     — mirrored on the right edge
+    ///   PlayerGuard   (container, below it)  — small caps label + framed Guard bar
+    ///   OpponentHealth / OpponentStamina / OpponentGuard — mirrored on the right edge
     /// </remarks>
     public static class CombatHudBuilder
     {
@@ -32,6 +33,7 @@ namespace OctagonFighter.Editor
         private static readonly Color PlayerAccent = Rgba(65, 217, 126, 255);
         private static readonly Color OpponentAccent = Rgba(255, 107, 61, 255);
         private static readonly Color StaminaFill = Rgba(56, 182, 232, 255);
+        private static readonly Color GuardFill = Rgba(242, 199, 71, 255);
         private static readonly Color DamageTrail = Rgba(255, 200, 87, 255);
         private static readonly Color NameColor = Rgba(242, 243, 245, 255);
         private static readonly Color MutedColor = Rgba(199, 208, 220, 255);
@@ -39,6 +41,7 @@ namespace OctagonFighter.Editor
 
         private const string HealthValueFormat = "<size=38>{0}</size><size=17> <color=#C7D0DC>/ {1}</color></size>";
         private const string StaminaValueFormat = "<size=19>{0}</size><size=12> <color=#C7D0DC>/ {1}</color></size>";
+        private const string GuardValueFormat = "<size=15>{0}</size><size=10> <color=#C7D0DC>/ {1}</color></size>";
 
         [MenuItem("OctagonFighter/Assets/Build Combat HUD")]
         public static void Build()
@@ -127,7 +130,7 @@ namespace OctagonFighter.Editor
                 anchor: new Vector2(mirror ? 1f : 0f, 1f),
                 pivot: new Vector2(mirror ? 1f : 0f, 1f),
                 anchoredPosition: new Vector2(edge, -16f),
-                size: new Vector2(664f, 158f));
+                size: new Vector2(664f, 204f));
             AddInnerDepth(plate.transform);
 
             GameObject healthHud = CreateContainer(
@@ -241,8 +244,59 @@ namespace OctagonFighter.Editor
             Image staminaFill = CreateInsetImage(staminaBack.transform, "Fill", StaminaFill, fillOrigin);
             AddInnerDepth(staminaBack.transform);
 
+            GameObject guardHud = CreateContainer(
+                parent,
+                side + "Guard",
+                anchor,
+                pivot,
+                new Vector2(edge, -166f),
+                new Vector2(640f, 40f));
+
+            CreateText(
+                guardHud.transform,
+                "GuardLabel",
+                "G U A R D",
+                font,
+                fontSize: 12,
+                fontStyle: FontStyle.Bold,
+                color: MutedColor,
+                alignment: innerAlign,
+                anchor: new Vector2(innerAnchor, 1f),
+                pivot: new Vector2(innerAnchor, 1f),
+                anchoredPosition: Vector2.zero,
+                size: new Vector2(280f, 18f));
+
+            Text guardValue = CreateText(
+                guardHud.transform,
+                "GuardValue",
+                "<size=15>100</size><size=10> <color=#C7D0DC>/ 100</color></size>",
+                font,
+                fontSize: 14,
+                fontStyle: FontStyle.Bold,
+                color: ValueColor,
+                alignment: outerAlign,
+                anchor: new Vector2(outerAnchor, 1f),
+                pivot: new Vector2(outerAnchor, 1f),
+                anchoredPosition: Vector2.zero,
+                size: new Vector2(160f, 18f),
+                richText: true);
+
+            GameObject guardBack = CreateImage(
+                guardHud.transform,
+                "BarBack",
+                PanelBackground,
+                anchor: new Vector2(0f, 1f),
+                pivot: new Vector2(0.5f, 1f),
+                anchoredPosition: new Vector2(0f, -22f),
+                size: new Vector2(640f, 10f),
+                stretchWidth: true);
+
+            Image guardFill = CreateInsetImage(guardBack.transform, "Fill", GuardFill, fillOrigin);
+            AddInnerDepth(guardBack.transform);
+
             WireHealthBar(healthHud, fighter, healthFill, healthTrail, healthValue, accent);
             WireStaminaBar(staminaHud, fighter, staminaFill, staminaValue);
+            WireGuardBar(guardHud, fighter, guardFill, guardValue);
         }
 
         private static void WireHealthBar(
@@ -275,6 +329,20 @@ namespace OctagonFighter.Editor
             SetPrivate(bar, "_label", valueLabel);
             SetPrivate(bar, "_title", string.Empty);
             SetPrivate(bar, "_valueFormat", StaminaValueFormat);
+        }
+
+        private static void WireGuardBar(
+            GameObject guardHud,
+            Presentation.Fighter.FighterController fighter,
+            Image fill,
+            Text valueLabel)
+        {
+            FighterGuardBar bar = guardHud.AddComponent<Presentation.UI.FighterGuardBar>();
+            SetPrivate(bar, "_fighter", fighter);
+            SetPrivate(bar, "_fill", fill);
+            SetPrivate(bar, "_label", valueLabel);
+            SetPrivate(bar, "_title", string.Empty);
+            SetPrivate(bar, "_valueFormat", GuardValueFormat);
         }
 
         private static Image CreateInsetImage(Transform parent, string name, Color color, int fillOrigin)

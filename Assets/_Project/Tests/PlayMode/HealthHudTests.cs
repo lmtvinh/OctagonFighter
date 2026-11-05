@@ -16,8 +16,9 @@ namespace OctagonFighter.Tests.PlayMode
     /// <summary>
     /// Verifies that the shipped combat HUD reflects the real health and stamina sources: both
     /// fighters start full, a landed strike drops the defender's health, spending drops the
-    /// attacker's stamina, a blocked strike leaves health untouched, and lethal damage empties
-    /// the health bar. Layout assertions keep both HUDs on-screen at the top of the Game View.
+    /// attacker's stamina, a blocked strike chips health instead of leaving it untouched, and
+    /// lethal damage empties the health bar. Layout assertions keep both HUDs on-screen at the top
+    /// of the Game View.
     /// </summary>
     public sealed class HealthHudTests : CombatSceneFixture
     {
@@ -80,7 +81,7 @@ namespace OctagonFighter.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator BlockedStrikeLeavesTheBarUnchanged()
+        public IEnumerator BlockedStrikeChipsTheHealthBarInsteadOfLeavingItUntouched()
         {
             FighterHealthBar opponentBar = FindBar(Defender);
             PlaceFighters(CloseDistance);
@@ -95,9 +96,11 @@ namespace OctagonFighter.Tests.PlayMode
             EndScenario();
 
             Assert.AreEqual(1, BlockedHits.Count, "The jab must be reported as blocked.");
-            Assert.AreEqual(healthBefore, Defender.Snapshot.CurrentHealth);
-            Assert.AreEqual(fillBefore, opponentBar.NormalizedHealth, 0.0001f,
-                "A blocked strike must not change the health bar.");
+            Assert.AreEqual(healthBefore - 2f, Defender.Snapshot.CurrentHealth, 0.01f,
+                "A blocked jab must chip 2 health.");
+            Assert.AreEqual(0.98f, opponentBar.NormalizedHealth, 0.001f,
+                "The bar must show the 2-point chip.");
+            StringAssert.Contains("98", opponentBar.Label.text);
             StringAssert.DoesNotContain("92", opponentBar.Label.text);
         }
 
@@ -233,7 +236,8 @@ namespace OctagonFighter.Tests.PlayMode
             EndScenario();
 
             Assert.AreEqual(1, BlockedHits.Count, "The cross must be reported as blocked.");
-            Assert.AreEqual(healthFillBefore, opponentHealth.NormalizedHealth, 0.0001f);
+            Assert.AreEqual(healthFillBefore - 0.0375f, opponentHealth.NormalizedHealth, 0.001f,
+                "A blocked cross must chip 3.75 health.");
             Assert.AreEqual(88f, Attacker.Stamina.CurrentStamina, 0.01f, "A blocked cross must still spend 12 stamina.");
             Assert.AreEqual(0.88f, playerBar.NormalizedStamina, 0.001f);
         }

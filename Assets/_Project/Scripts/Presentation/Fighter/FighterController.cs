@@ -7,6 +7,7 @@ using OctagonFighter.Core.Time;
 using OctagonFighter.Data.Fighters;
 using OctagonFighter.Domain.Combat;
 using OctagonFighter.Domain.Fighters;
+using OctagonFighter.Domain.Guard;
 using OctagonFighter.Domain.Health;
 using OctagonFighter.Domain.Stamina;
 using OctagonFighter.Domain.StateMachine;
@@ -89,40 +90,85 @@ namespace OctagonFighter.Presentation.Fighter
         public bool IsReactingToHit => _runtime != null && _runtime.IsReactingToHit;
 
         /// <summary>
-        /// Gets a value indicating whether the fighter is holding a defensive block.
+        /// Gets a value indicating whether the fighter is holding a defensive block. The guard stays
+        /// active during the short block-impact reaction, but not while the guard is broken.
         /// </summary>
         public bool IsBlocking => _runtime != null && _runtime.IsBlocking;
+
+        /// <summary>
+        /// Gets the current guard value.
+        /// </summary>
+        public float CurrentGuard => _runtime != null ? _runtime.Guard.CurrentGuard : 0f;
+
+        /// <summary>
+        /// Gets the maximum guard value.
+        /// </summary>
+        public float MaxGuard => _runtime != null ? _runtime.Guard.MaxGuard : 0f;
+
+        /// <summary>
+        /// Gets a value indicating whether the guard is currently broken.
+        /// </summary>
+        public bool IsBroken => _runtime != null && _runtime.Guard.IsBroken;
+
+        /// <inheritdoc />
+        public event Action<GuardChangedEvent> Changed;
+
+        /// <inheritdoc />
+        public event Action<GuardBrokenEvent> Broken;
 
         /// <summary>
         /// Gets the damage receiver for this fighter.
         /// </summary>
         public IDamageable Damageable => this;
 
+        /// <inheritdoc />
+        public BlockResolution ApplyBlock(in AttackDefinition attack, in DamageEvent damage)
+        {
+            if (_runtime == null)
+            {
+                return BlockResolution.NotBlocked;
+            }
+
+            BlockResolution resolution = _runtime.ApplyBlock(attack, damage);
+            ApplyBlockPushback(resolution);
+            return resolution;
+        }
+
+        /// <inheritdoc />
+        public BlockResolution ApplyBlock(in DamageEvent damage)
+        {
+            if (_runtime == null)
+            {
+                return BlockResolution.NotBlocked;
+            }
+
+            BlockResolution resolution = _runtime.ApplyBlock(damage);
+            ApplyBlockPushback(resolution);
+            return resolution;
+        }
+
         /// <summary>
-        /// Applies resolved damage, unless the fighter is currently blocking.
+        /// Applies resolved damage through the runtime. A guarding fighter resolves the hit through
+        /// its guard instead: partial chip damage, guard damage, stamina cost, and a block reaction.
         /// </summary>
         /// <remarks>
-        /// The controller is the combat-facing damage receiver so blocking is decided before the
-        /// health adapter sees the hit. A blocked strike is reported as zero applied damage and
-        /// never raises <see cref="HealthComponent.Damaged"/>, which is what keeps it from starting
-        /// a hit reaction.
+        /// Chip damage is applied directly to the health model, never through
+        /// <see cref="HealthComponent.ApplyDamage"/>, so a blocked strike updates the HUD without
+        /// raising <see cref="HealthComponent.Damaged"/> or starting a hit reaction.
         /// </remarks>
         public DamageResult ApplyDamage(in DamageEvent damage)
         {
-            if (IsBlocking)
+            if (_runtime == null)
             {
-                // Reuse the health adapter's zero-damage path so callers still receive consistent
-                // previous/current health values without changing health or raising events.
-                return _healthComponent.ApplyDamage(new DamageEvent(
-                    damage.AttackerId,
-                    damage.TargetId,
-                    0f,
-                    damage.Type,
-                    damage.Region,
-                    damage.Tick));
+                return _healthComponent.ApplyDamage(damage);
             }
 
-            return _healthComponent.ApplyDamage(damage);
+            if (IsBlocking)
+            {
+                return ApplyBlock(damage).HealthDamage;
+            }
+
+            return _runtime.ApplyDamage(damage);
         }
 
         /// <summary>
@@ -300,6 +346,8 @@ namespace OctagonFighter.Presentation.Fighter
             _runtime.Defeated += OnRuntimeDefeated;
             _runtime.HitRequested += OnRuntimeHitRequested;
             _runtime.HitReactionStarted += OnRuntimeHitReactionStarted;
+            _runtime.Guard.Changed += OnGuardChanged;
+            _runtime.Guard.Broken += OnGuardBroken;
             _healthComponent.Damaged += OnDamaged;
             _isInitialized = true;
 
@@ -410,6 +458,8 @@ namespace OctagonFighter.Presentation.Fighter
             _runtime.Defeated -= OnRuntimeDefeated;
             _runtime.HitRequested -= OnRuntimeHitRequested;
             _runtime.HitReactionStarted -= OnRuntimeHitReactionStarted;
+            _runtime.Guard.Changed -= OnGuardChanged;
+            _runtime.Guard.Broken -= OnGuardBroken;
             _healthComponent.Damaged -= OnDamaged;
             _runtime.Dispose();
             _runtime = null;
@@ -490,6 +540,24 @@ namespace OctagonFighter.Presentation.Fighter
             _view?.PlayHitReaction(reaction.Region);
         }
 
+        private void OnGuardChanged(GuardChangedEvent changed)
+        {
+            Changed?.Invoke(changed);
+        }
+
+        private void OnGuardBroken(GuardBrokenEvent broken)
+        {
+            Broken?.Invoke(broken);
+        }
+
+        private void ApplyBlockPushback(in BlockResolution resolution)
+        {
+            if (resolution.WasBlocked && resolution.PushbackDistance > 0f)
+            {
+                _motor.ApplyPushback(resolution.PushbackDistance);
+            }
+        }
+
         private void OnRuntimeHitRequested(AttackHitRequest request)
         {
             if (_hitDetector == null || _fighterRegistry == null || _strikeRig == null)
@@ -561,21 +629,27 @@ namespace OctagonFighter.Presentation.Fighter
                 request.Tick);
 
             // The claim above already consumed this strike for the target, so a blocked hit is
-            // resolved exactly once and the remaining contact ticks stay silent. Guarding is
-            // checked here, before health, so no damage is applied and no reaction starts.
+            // resolved exactly once and the remaining contact ticks stay silent. Guard resolution
+            // owns the chip damage, guard damage, stamina cost, block reaction, and pushback.
             if (damageable is IGuardState guard && guard.IsBlocking)
             {
-                HitBlocked?.Invoke(damageEvent);
-
-                if (_logResolvedHits)
+                BlockResolution block = guard.ApplyBlock(request.Attack, damageEvent);
+                if (block.WasBlocked)
                 {
-                    Debug.Log(
-                        $"{request.AttackerId.Value} was blocked by {candidate.TargetId.Value} " +
-                        $"({request.Attack.DisplayName}, {request.Attack.Region}).",
-                        this);
-                }
+                    HitBlocked?.Invoke(damageEvent);
 
-                return;
+                    if (_logResolvedHits)
+                    {
+                        Debug.Log(
+                            $"{request.AttackerId.Value} was blocked by {candidate.TargetId.Value} " +
+                            $"({request.Attack.DisplayName}, {request.Attack.Region}) " +
+                            $"chip={block.HealthDamage.AppliedAmount:0.##} " +
+                            $"guard={block.GuardDamage.AppliedGuardDamage:0.##}.",
+                            this);
+                    }
+
+                    return;
+                }
             }
 
             DamageResult result = damageable.ApplyDamage(damageEvent);

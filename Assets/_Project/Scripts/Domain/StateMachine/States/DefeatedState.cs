@@ -11,7 +11,7 @@ namespace OctagonFighter.Domain.StateMachine.States
         /// Initializes a new instance of the <see cref="DefeatedState"/> class.
         /// </summary>
         public DefeatedState()
-            : base(FighterStateId.Defeated, MovementAuthority.None, FighterIntentMask.None, 100)
+            : base(FighterStateId.Defeated, MovementAuthority.None, FighterIntentMask.None, 100, FacingAuthority.Locked)
         {
         }
 

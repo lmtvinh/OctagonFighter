@@ -16,8 +16,8 @@ namespace OctagonFighter.Domain.Health
         Body = 1,
 
         /// <summary>
-        /// Limb region.
+        /// Leg region.
         /// </summary>
-        Limb = 2
+        Leg = 2
     }
 }

@@ -295,6 +295,7 @@ namespace OctagonFighter.Editor
             AddInnerDepth(guardBack.transform);
 
             WireHealthBar(healthHud, fighter, healthFill, healthTrail, healthValue, accent);
+            WireRegionFeedback(healthHud, fighter, font, accent);
             WireStaminaBar(staminaHud, fighter, staminaFill, staminaValue);
             WireGuardBar(guardHud, fighter, guardFill, guardValue);
         }
@@ -343,6 +344,31 @@ namespace OctagonFighter.Editor
             SetPrivate(bar, "_label", valueLabel);
             SetPrivate(bar, "_title", string.Empty);
             SetPrivate(bar, "_valueFormat", GuardValueFormat);
+        }
+
+        private static void WireRegionFeedback(
+            GameObject healthHud,
+            Presentation.Fighter.FighterController fighter,
+            Font font,
+            Color accent)
+        {
+            Text regionValue = CreateText(
+                healthHud.transform,
+                "HitRegionValue",
+                string.Empty,
+                font: font,
+                fontSize: 14,
+                fontStyle: FontStyle.Bold,
+                color: accent,
+                alignment: TextAnchor.MiddleLeft,
+                anchor: new Vector2(0f, 1f),
+                pivot: new Vector2(0f, 1f),
+                anchoredPosition: new Vector2(6f, -106f),
+                size: new Vector2(300f, 20f));
+
+            HitRegionFeedback feedback = healthHud.AddComponent<Presentation.UI.HitRegionFeedback>();
+            SetPrivate(feedback, "_fighter", fighter);
+            SetPrivate(feedback, "_label", regionValue);
         }
 
         private static Image CreateInsetImage(Transform parent, string name, Color color, int fillOrigin)

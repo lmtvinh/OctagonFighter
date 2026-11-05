@@ -25,6 +25,7 @@ namespace OctagonFighter.Presentation.Fighter
         private static readonly int CrossState = Animator.StringToHash("Cross");
         private static readonly int HitReactionHeadState = Animator.StringToHash("HitReactionHead");
         private static readonly int HitReactionBodyState = Animator.StringToHash("HitReactionBody");
+        private static readonly int DefeatedState = Animator.StringToHash("Defeated");
 
         private const float AttackFadeSeconds = 0.05f;
         private const float ReturnFadeSeconds = 0.1f;
@@ -46,6 +47,7 @@ namespace OctagonFighter.Presentation.Fighter
         private bool _hasCrossState;
         private bool _hasHitReactionHeadState;
         private bool _hasHitReactionBodyState;
+        private bool _hasDefeatedState;
         private int _lastState = -1;
 
         /// <summary>
@@ -72,6 +74,7 @@ namespace OctagonFighter.Presentation.Fighter
             _hasCrossState = _animator.HasState(0, CrossState);
             _hasHitReactionHeadState = _animator.HasState(0, HitReactionHeadState);
             _hasHitReactionBodyState = _animator.HasState(0, HitReactionBodyState);
+            _hasDefeatedState = _animator.HasState(0, DefeatedState);
 
             foreach (AnimatorControllerParameter parameter in _animator.parameters)
             {
@@ -212,6 +215,13 @@ namespace OctagonFighter.Presentation.Fighter
                 else if (snapshot.State == FighterStateId.HeavyPunch)
                 {
                     EnterAttackState(CrossParameter, CrossState, _hasCross, _hasCrossState);
+                }
+                else if (snapshot.State == FighterStateId.Defeated && _hasDefeatedState)
+                {
+                    // Play the defeated fall/KO clip once. Defeat is terminal, so the animator
+                    // stays in this state; the IsDefeated flag keeps the bool-driven transition
+                    // consistent on controllers that use it.
+                    _animator.CrossFadeInFixedTime(DefeatedState, AttackFadeSeconds, 0);
                 }
                 else if (snapshot.State == FighterStateId.GuardBreak && _hasLocomotionState)
                 {

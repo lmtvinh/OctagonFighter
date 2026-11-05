@@ -409,6 +409,65 @@ namespace OctagonFighter.Tests.EditMode
         }
 
         [Test]
+        public void DefeatedStateLocksFacing()
+        {
+            _runtime.ApplyDamage(new DamageEvent(
+                AttackerId,
+                _data.Id,
+                _data.Health.MaxHealth,
+                DamageType.Impact,
+                HitRegion.Head,
+                _clock.CurrentTick));
+            Tick(TickSeconds);
+
+            Assert.AreEqual(FighterStateId.Defeated, _runtime.StateMachine.CurrentStateId);
+            Assert.AreEqual(
+                FacingAuthority.Locked,
+                _runtime.CurrentFacingAuthority,
+                "Defeat must lock the fighter's facing so it cannot turn toward the opponent.");
+        }
+
+        [Test]
+        public void DefeatIgnoresBlockAndAttackIntents()
+        {
+            _runtime.ApplyDamage(new DamageEvent(
+                AttackerId,
+                _data.Id,
+                _data.Health.MaxHealth,
+                DamageType.Impact,
+                HitRegion.Head,
+                _clock.CurrentTick));
+            Tick(TickSeconds);
+            Assert.AreEqual(FighterStateId.Defeated, _runtime.StateMachine.CurrentStateId);
+
+            // Block intent.
+            _intents.Next = new FighterIntent(
+                Float2.Zero,
+                FighterCommand.Block,
+                true,
+                true,
+                MovementGait.Walk,
+                _clock.CurrentTick);
+            Tick(TickSeconds);
+            Assert.AreEqual(FighterStateId.Defeated, _runtime.StateMachine.CurrentStateId,
+                "A defeated fighter must not enter blocking.");
+            Assert.IsFalse(_runtime.IsBlocking);
+
+            // Attack intent.
+            _intents.Next = new FighterIntent(
+                Float2.Zero,
+                FighterCommand.LightPunch,
+                true,
+                false,
+                MovementGait.Walk,
+                _clock.CurrentTick);
+            Tick(TickSeconds);
+            Assert.AreEqual(FighterStateId.Defeated, _runtime.StateMachine.CurrentStateId,
+                "A defeated fighter must not attack.");
+            Assert.IsFalse(_runtime.Attacks.IsOnCooldown(AttackSlot.Light));
+        }
+
+        [Test]
         public void ShippedStrikesReachBothReactionRegions()
         {
             var definition = AssetDatabase.LoadAssetAtPath<FighterDefinition>(FighterDefinitionPath);

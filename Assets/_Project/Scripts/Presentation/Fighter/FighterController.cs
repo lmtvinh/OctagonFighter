@@ -110,6 +110,21 @@ namespace OctagonFighter.Presentation.Fighter
         /// </summary>
         public bool IsBroken => _runtime != null && _runtime.Guard.IsBroken;
 
+        /// <summary>
+        /// Gets the movement authority of the current state.
+        /// </summary>
+        public MovementAuthority CurrentMovementAuthority => _runtime != null ? _runtime.CurrentMovementAuthority : MovementAuthority.None;
+
+        /// <summary>
+        /// Gets a value indicating whether the light attack slot may start now (cooldown elapsed).
+        /// </summary>
+        public bool CanStartLight => _runtime != null && _runtime.Attacks.CanStart(AttackSlot.Light);
+
+        /// <summary>
+        /// Gets a value indicating whether the heavy attack slot may start now (cooldown elapsed).
+        /// </summary>
+        public bool CanStartHeavy => _runtime != null && _runtime.Attacks.CanStart(AttackSlot.Heavy);
+
         /// <inheritdoc />
         public event Action<GuardChangedEvent> Changed;
 
@@ -131,6 +146,18 @@ namespace OctagonFighter.Presentation.Fighter
 
             BlockResolution resolution = _runtime.ApplyBlock(attack, damage);
             ApplyBlockPushback(resolution);
+
+            if (resolution.WasBlocked)
+            {
+                HitFeedback?.Invoke(new HitFeedback(
+                    damage.AttackerId,
+                    Id,
+                    damage.Region,
+                    blocked: true,
+                    resolution.HealthDamage.AppliedAmount,
+                    damage.Tick));
+            }
+
             return resolution;
         }
 
@@ -144,6 +171,18 @@ namespace OctagonFighter.Presentation.Fighter
 
             BlockResolution resolution = _runtime.ApplyBlock(damage);
             ApplyBlockPushback(resolution);
+
+            if (resolution.WasBlocked)
+            {
+                HitFeedback?.Invoke(new HitFeedback(
+                    damage.AttackerId,
+                    Id,
+                    damage.Region,
+                    blocked: true,
+                    resolution.HealthDamage.AppliedAmount,
+                    damage.Tick));
+            }
+
             return resolution;
         }
 
@@ -168,7 +207,16 @@ namespace OctagonFighter.Presentation.Fighter
                 return ApplyBlock(damage).HealthDamage;
             }
 
-            return _runtime.ApplyDamage(damage);
+            DamageResult result = _runtime.ApplyDamage(damage);
+            HitFeedback?.Invoke(new HitFeedback(
+                damage.AttackerId,
+                Id,
+                damage.Region,
+                blocked: false,
+                result.AppliedAmount,
+                damage.Tick));
+
+            return result;
         }
 
         /// <summary>
@@ -206,6 +254,13 @@ namespace OctagonFighter.Presentation.Fighter
         /// have applied to the guarded target.
         /// </summary>
         public event Action<DamageEvent> HitBlocked;
+
+        /// <summary>
+        /// Occurs once for every resolved strike, whether blocked or landed, carrying the
+        /// collision-derived body region and a blocked flag. Exactly one event is raised per
+        /// strike so the HUD can present HEAD/BODY/LEG feedback without duplicates.
+        /// </summary>
+        public event Action<HitFeedback> HitFeedback;
 
         /// <summary>
         /// Replaces the intent source consumed by the running simulation.
@@ -625,12 +680,14 @@ namespace OctagonFighter.Presentation.Fighter
                 candidate.TargetId,
                 request.Attack.Damage,
                 DamageType.Impact,
-                request.Attack.Region,
+                candidate.Region,
                 request.Tick);
 
             // The claim above already consumed this strike for the target, so a blocked hit is
             // resolved exactly once and the remaining contact ticks stay silent. Guard resolution
-            // owns the chip damage, guard damage, stamina cost, block reaction, and pushback.
+            // owns the chip damage, guard damage, stamina cost, block reaction, and pushback. The
+            // defender-side HitFeedback is raised from the defender's ApplyBlock/ApplyDamage paths
+            // so each fighter's HUD listens to its own controller.
             if (damageable is IGuardState guard && guard.IsBlocking)
             {
                 BlockResolution block = guard.ApplyBlock(request.Attack, damageEvent);
@@ -642,7 +699,7 @@ namespace OctagonFighter.Presentation.Fighter
                     {
                         Debug.Log(
                             $"{request.AttackerId.Value} was blocked by {candidate.TargetId.Value} " +
-                            $"({request.Attack.DisplayName}, {request.Attack.Region}) " +
+                            $"({request.Attack.DisplayName}, {damageEvent.Region}) " +
                             $"chip={block.HealthDamage.AppliedAmount:0.##} " +
                             $"guard={block.GuardDamage.AppliedGuardDamage:0.##}.",
                             this);
@@ -659,7 +716,7 @@ namespace OctagonFighter.Presentation.Fighter
                 Debug.Log(
                     $"{request.AttackerId.Value} landed {request.Attack.DisplayName} on " +
                     $"{candidate.TargetId.Value} for {result.AppliedAmount:0.#} damage " +
-                    $"({request.Attack.Region}).",
+                    $"({damageEvent.Region}).",
                     this);
             }
         }

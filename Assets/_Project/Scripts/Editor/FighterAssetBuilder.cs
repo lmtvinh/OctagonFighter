@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using OctagonFighter.Data.Fighters;
+using OctagonFighter.Domain.Health;
 using OctagonFighter.Infrastructure.Combat;
 using OctagonFighter.Infrastructure.Health;
 using OctagonFighter.Infrastructure.Input;
@@ -841,6 +842,15 @@ namespace OctagonFighter.Editor
             hitboxCollider.direction = 1;
             hitboxCollider.isTrigger = true;
 
+            // Discrete body-region volumes so combat queries can derive the resolved hit region
+            // from the collided volume (Head/Body/Leg) instead of the attack's authored name.
+            // These sit inside the full-body Hitbox capsule and take precedence over it in
+            // SweptHitDetector. Bind-pose reference: Head 1.32-1.78 m, Body 0.83-1.27 m,
+            // Leg 0.01-0.79 m above the floor.
+            AddRegionVolume(root, "RegionHead", new Vector3(0f, 1.55f, 0f), new Vector3(0.4f, 0.46f, 0.4f), HitRegion.Head);
+            AddRegionVolume(root, "RegionBody", new Vector3(0f, 1.05f, 0f), new Vector3(0.5f, 0.44f, 0.5f), HitRegion.Body);
+            AddRegionVolume(root, "RegionLeg", new Vector3(0f, 0.40f, 0f), new Vector3(0.4f, 0.78f, 0.4f), HitRegion.Leg);
+
             root.AddComponent<HealthComponent>();
             root.AddComponent<StaminaComponent>();
             var identity = root.AddComponent<FighterIdentity>();
@@ -963,6 +973,104 @@ namespace OctagonFighter.Editor
 
             scenes[existingScenes.Length] = new EditorBuildSettingsScene(scenePath, true);
             EditorBuildSettings.scenes = scenes;
+        }
+
+        private static void AddRegionVolume(
+            GameObject root,
+            string name,
+            Vector3 center,
+            Vector3 size,
+            HitRegion region)
+        {
+            var volume = new GameObject(name);
+            volume.layer = root.layer;
+            volume.transform.SetParent(root.transform, false);
+            volume.transform.localPosition = center;
+            var collider = volume.AddComponent<BoxCollider>();
+            collider.size = size;
+            collider.center = Vector3.zero;
+            collider.isTrigger = true;
+            volume.AddComponent<HitRegionVolume>().SetRegion(region);
+        }
+
+        [MenuItem("OctagonFighter/Assets/Setup Phase C Defeated Presentation")]
+        public static void SetupDefeatedPresentation()
+        {
+            SetupKoClipImport();
+            AddDefeatedAnimatorState();
+        }
+
+        private static void SetupKoClipImport()
+        {
+            const string KoPath = "Assets/_Project/Art/Animations/KnockOut_Loser_mixamo.fbx";
+            var importer = AssetImporter.GetAtPath(KoPath) as ModelImporter;
+            if (importer == null)
+            {
+                Debug.LogWarning("[PhaseC] KnockOut_Loser_mixamo.fbx importer not found.");
+                return;
+            }
+
+            importer.animationType = ModelImporterAnimationType.Human;
+            importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+            importer.SaveAndReimport();
+
+            Debug.Log("[PhaseC] KnockOut clip import configured as Humanoid/CreateFromThisModel.");
+        }
+
+        private static AnimationClip FindKoFallClip()
+        {
+            const string KoPath = "Assets/_Project/Art/Animations/KnockOut_Loser_mixamo.fbx";
+            foreach (UnityEngine.Object asset in AssetDatabase.LoadAllAssetsAtPath(KoPath))
+            {
+                if (asset is AnimationClip clip)
+                {
+                    return clip;
+                }
+            }
+
+            return null;
+        }
+
+        private static void AddDefeatedAnimatorState()
+        {
+            const string ControllerPath = "Assets/_Project/Art/Animations/AC_Fighter_Base.controller";
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
+            if (controller == null)
+            {
+                Debug.LogWarning("[PhaseC] Animator controller not found; skipping Defeated state.");
+                return;
+            }
+
+            var clip = FindKoFallClip();
+            if (clip == null)
+            {
+                Debug.LogWarning("[PhaseC] KO_Fall clip not found; run 'Setup Phase C Defeated Presentation' after reimport.");
+            }
+
+            var layer = controller.layers[0];
+            var stateMachine = layer.stateMachine;
+
+            if (stateMachine.states.Any(child => child.state.name == "Defeated"))
+            {
+                Debug.Log("[PhaseC] Defeated state already present in the animator controller.");
+                return;
+            }
+
+            var defeatedState = stateMachine.AddState("Defeated");
+            if (clip != null)
+            {
+                defeatedState.motion = clip;
+            }
+
+            var transition = stateMachine.AddAnyStateTransition(defeatedState);
+            transition.AddCondition(AnimatorConditionMode.If, 1f, "IsDefeated");
+            transition.hasExitTime = false;
+            transition.exitTime = 0f;
+            transition.duration = 0f;
+            transition.offset = 0f;
+
+            AssetDatabase.SaveAssets();
+            Debug.Log("[PhaseC] Defeated animator state added with AnyState -> Defeated (IsDefeated) transition.");
         }
     }
 }

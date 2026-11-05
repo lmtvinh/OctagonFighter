@@ -1,6 +1,7 @@
 using OctagonFighter.Application.Combat;
 using OctagonFighter.Core.Math;
 using OctagonFighter.Domain.Combat;
+using OctagonFighter.Domain.Health;
 using UnityEngine;
 
 namespace OctagonFighter.Infrastructure.Combat
@@ -11,6 +12,16 @@ namespace OctagonFighter.Infrastructure.Combat
     public sealed class SweptHitDetector : IHitDetector
     {
         private const int MaximumHits = 16;
+
+        /// <summary>
+        /// Contact height at or above which the fallback region is the head.
+        /// </summary>
+        private const float HeadRegionHeight = 1.3f;
+
+        /// <summary>
+        /// Contact height at or above which the fallback region is the body (below it, the leg).
+        /// </summary>
+        private const float BodyRegionHeight = 0.85f;
 
         private readonly RaycastHit[] _hits = new RaycastHit[MaximumHits];
         private readonly Collider[] _overlaps = new Collider[MaximumHits];
@@ -34,13 +45,14 @@ namespace OctagonFighter.Infrastructure.Combat
                 ~0,
                 QueryTriggerInteraction.Collide);
 
+            HitCandidate? volumeOverlap = null;
+            HitCandidate? fallbackOverlap = null;
+
             for (int index = 0; index < overlapCount; index++)
             {
                 Collider collider = _overlaps[index];
                 if (collider == null || collider is CharacterController)
                 {
-                    // The CharacterController is a movement shell whose effective query shape is
-                    // inset from the authored body; combat uses the dedicated trigger hitbox.
                     continue;
                 }
 
@@ -52,7 +64,31 @@ namespace OctagonFighter.Infrastructure.Combat
                     continue;
                 }
 
-                candidate = new HitCandidate(identity.Id, query.Origin, 0f);
+                var overlapCandidate = new HitCandidate(
+                    identity.Id,
+                    query.Origin,
+                    0f,
+                    ResolveRegion(collider, query.Origin));
+
+                if (collider.GetComponent<HitRegionVolume>() != null)
+                {
+                    // A discrete body volume is authoritative over the generic capsule.
+                    volumeOverlap = overlapCandidate;
+                    break;
+                }
+
+                fallbackOverlap ??= overlapCandidate;
+            }
+
+            if (volumeOverlap.HasValue)
+            {
+                candidate = volumeOverlap.Value;
+                return true;
+            }
+
+            if (fallbackOverlap.HasValue)
+            {
+                candidate = fallbackOverlap.Value;
                 return true;
             }
 
@@ -88,14 +124,42 @@ namespace OctagonFighter.Infrastructure.Combat
                 }
 
                 nearestDistance = hit.distance;
+                var contact = new Float3(hit.point.x, hit.point.y, hit.point.z);
                 candidate = new HitCandidate(
                     identity.Id,
-                    new Float3(hit.point.x, hit.point.y, hit.point.z),
-                    hit.distance);
+                    contact,
+                    hit.distance,
+                    ResolveRegion(hit.collider, contact));
                 found = true;
             }
 
             return found;
+        }
+
+        /// <summary>
+        /// Resolves the body region for a collided collider, preferring an authored
+        /// <see cref="HitRegionVolume"/> and falling back to contact-height mapping otherwise.
+        /// </summary>
+        private static HitRegion ResolveRegion(Collider collider, Float3 contactPoint)
+        {
+            var volume = collider.GetComponent<HitRegionVolume>();
+            if (volume != null)
+            {
+                return volume.Region;
+            }
+
+            float height = contactPoint.Y;
+            if (height >= HeadRegionHeight)
+            {
+                return HitRegion.Head;
+            }
+
+            if (height >= BodyRegionHeight)
+            {
+                return HitRegion.Body;
+            }
+
+            return HitRegion.Leg;
         }
     }
 }
